@@ -659,7 +659,7 @@ const yMax = Math.min(100, Math.ceil((Math.max(...allY) + 2) / 5) * 5);
       `<p style="color:red;padding:1rem"><b>Error en Chart.js:</b> ${e.message}</p>`;
   }
 
-  eels.footer.textContent =
+  els.footer.textContent =
   `Datos: encuestas de opinión pública (múltiples mediciones). ` +
   `Estimaciones puntuales con IC 95% mediante transformación estabilizadora de varianza de Fisher (arcsin√p). ` +
   `Tendencia: suavizamiento local ponderado (LOESS) sobre proporciones transformadas, con bandas de incertidumbre calculadas en la escala transformada y retrotransformadas a porcentaje. ` +

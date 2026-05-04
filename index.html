@@ -258,76 +258,114 @@ function fisherCI(pPct, n, z = 1.96) {
 }
 
 function metaPoolFisher(psPct, ns, z = 1.96) {
+  const m     = psPct.length;
+  const theta = psPct.map(p => Math.asin(Math.sqrt(clamp01(p / 100))));
+  const prec  = ns.map(ni => 4 * ni);
+
+  // Fixed-effects estimate for Cochran's Q
   let W = 0, wTheta = 0;
-  for (let i = 0; i < psPct.length; i++) {
-    const w = 4 * ns[i];
-    W      += w;
-    wTheta += w * Math.asin(Math.sqrt(clamp01(psPct[i] / 100)));
+  for (let i = 0; i < m; i++) { W += prec[i]; wTheta += prec[i] * theta[i]; }
+  const thetaFE = wTheta / W;
+
+  // DerSimonian-Laird τ²
+  let Q = 0, sumW2 = 0;
+  for (let i = 0; i < m; i++) {
+    Q     += prec[i] * Math.pow(theta[i] - thetaFE, 2);
+    sumW2 += prec[i] * prec[i];
   }
-  const thetaHat = wTheta / W;
-  const se       = Math.sqrt(1 / W);
+  const tauSq = Math.max(0, (Q - (m - 1)) / (W - sumW2 / W));
+
+  // Random-effects estimate
+  let Wre = 0, wThetaRE = 0;
+  for (let i = 0; i < m; i++) {
+    const w  = 1 / (1 / prec[i] + tauSq);
+    Wre      += w;
+    wThetaRE += w * theta[i];
+  }
+  const thetaHat = wThetaRE / Wre;
+  const se       = Math.sqrt(1 / Wre);
   const loTheta  = Math.max(0, thetaHat - z * se);
   const hiTheta  = Math.min(Math.PI / 2, thetaHat + z * se);
   return {
     est: 100 * Math.pow(Math.sin(thetaHat), 2),
-    lo:  100 * Math.pow(Math.sin(loTheta), 2),
-    hi:  100 * Math.pow(Math.sin(hiTheta), 2),
+    lo:  100 * Math.pow(Math.sin(loTheta),  2),
+    hi:  100 * Math.pow(Math.sin(hiTheta),  2),
   };
 }
 
-function smoothArray(arr, xs, bw = 0.35) {
-  const n = arr.length;
-  const k = Math.min(Math.floor(n * bw), n - 1);
-  const out = new Array(n);
-  for (let i = 0; i < n; i++) {
-    const xi    = xs[i];
-    const dists = xs.map((x, j) => ({ j, d: Math.abs(x - xi) })).sort((a, b) => a.d - b.d);
-    const md    = dists[k]?.d || Number.EPSILON;
-    let sw = 0, swy = 0;
-    for (const { j, d } of dists) {
-      const u = d / md;
-      if (u >= 1) continue;
-      const w = Math.pow(1 - u * u * u, 3);
-      sw += w; swy += w * arr[j];
-    }
-    out[i] = sw > 0 ? swy / sw : arr[i];
-  }
-  return out;
-}
-
 function fisherTrendWithCI(xs, psPct, ns, bw = 0.35, z = 1.96) {
-  const n       = xs.length;
-  const k       = Math.min(Math.floor(n * bw), n - 1);
-  const fit     = new Array(n);
-  const se      = new Array(n);
-  const lo      = new Array(n);
-  const hi      = new Array(n);
-  const theta   = psPct.map(pct => Math.asin(Math.sqrt(clamp01(pct / 100))));
-  const weights = ns.map(ni => 4 * ni);
+  const n     = xs.length;
+  const k     = Math.min(Math.floor(n * bw), n - 1);
+  const fit   = new Array(n);
+  const lo    = new Array(n);
+  const hi    = new Array(n);
+  const theta = psPct.map(pct => Math.asin(Math.sqrt(clamp01(pct / 100))));
+  const prec  = ns.map(ni => 4 * ni);
 
   for (let i = 0; i < n; i++) {
     const xi    = xs[i];
     const dists = xs.map((x, j) => ({ j, d: Math.abs(x - xi) })).sort((a, b) => a.d - b.d);
     const md    = dists[k]?.d || Number.EPSILON;
-    let sw = 0, swTheta = 0;
+
+    // Collect local neighbourhood
+    const nbrs = [];
     for (const { j, d } of dists) {
       const u = d / md;
       if (u >= 1) continue;
-      const w = Math.pow(1 - u * u * u, 3) * weights[j];
-      sw += w; swTheta += w * theta[j];
+      nbrs.push({ j, K: Math.pow(1 - u * u * u, 3), dx: xs[j] - xi });
     }
-    fit[i] = sw > 0 ? swTheta / sw : theta[i];
-    se[i]  = sw > 0 ? Math.sqrt(1 / sw) : 0;
-  }
 
-  const seSmooth = smoothArray(se, xs, 0.45);
-  for (let i = 0; i < n; i++) {
-    const loTheta = Math.max(0, fit[i] - z * seSmooth[i]);
-    const hiTheta = Math.min(Math.PI / 2, fit[i] + z * seSmooth[i]);
+    // ── Local linear WLS: w = K·prec ─────────────────────────────────────────
+    let sw=0, swdx=0, swdx2=0, swy=0, swdxy=0;
+    for (const { j, K, dx } of nbrs) {
+      const w = K * prec[j];
+      sw    += w;  swdx  += w*dx;      swdx2 += w*dx*dx;
+      swy   += w*theta[j];             swdxy += w*dx*theta[j];
+    }
+    const det = sw * swdx2 - swdx * swdx;
+    const b0  = det > 0 ? (swdx2*swy  - swdx *swdxy) / det : swy / sw;
+    const b1  = det > 0 ? (sw   *swdxy - swdx *swy)   / det : 0;
+
+    // ── DerSimonian-Laird τ² (precision-only local linear for Q) ─────────────
+    let Pw=0, Pwdx=0, Pwdx2=0, Pwy=0, Pwdxy=0;
+    for (const { j, dx } of nbrs) {
+      const w = prec[j];
+      Pw    += w;  Pwdx  += w*dx;      Pwdx2 += w*dx*dx;
+      Pwy   += w*theta[j];             Pwdxy += w*dx*theta[j];
+    }
+    const Pdet = Pw * Pwdx2 - Pwdx * Pwdx;
+    const Pb0  = Pdet > 0 ? (Pwdx2*Pwy  - Pwdx *Pwdxy) / Pdet : Pwy/Pw;
+    const Pb1  = Pdet > 0 ? (Pw   *Pwdxy - Pwdx *Pwy)   / Pdet : 0;
+
+    let Q=0, sumW=0, sumW2=0;
+    for (const { j, dx } of nbrs) {
+      const w = prec[j];
+      Q     += w * Math.pow(theta[j] - Pb0 - Pb1*dx, 2);
+      sumW  += w;  sumW2 += w*w;
+    }
+    const df    = Math.max(1, nbrs.length - 2);
+    const tauSq = Math.max(0, (Q - df) / (sumW - sumW2 / sumW));
+
+    // ── Sandwich SE of b0 with Var(θ_j) = 1/prec_j + τ² ─────────────────────
+    // c_j = (K_j·prec_j)²·(1/prec_j + τ²) = K_j²·prec_j·(1 + τ²·prec_j)
+    let sbw=0, sbwdx=0, sbwdx2=0;
+    for (const { j, K, dx } of nbrs) {
+      const c  = K*K * prec[j] * (1 + tauSq * prec[j]);
+      sbw   += c;  sbwdx  += c*dx;  sbwdx2 += c*dx*dx;
+    }
+    const varB0 = det > 0
+      ? (swdx2*swdx2*sbw - 2*swdx2*swdx*sbwdx + swdx*swdx*sbwdx2) / (det*det)
+      : sbw / (sw*sw);
+    const seB0  = Math.sqrt(Math.max(0, varB0));
+
+    const loTheta = Math.max(0,         b0 - z*seB0);
+    const hiTheta = Math.min(Math.PI/2, b0 + z*seB0);
+
+    fit[i] = 100 * Math.pow(Math.sin(b0),      2);
     lo[i]  = 100 * Math.pow(Math.sin(loTheta), 2);
     hi[i]  = 100 * Math.pow(Math.sin(hiTheta), 2);
-    fit[i] = 100 * Math.pow(Math.sin(fit[i]), 2);
   }
+
   return { fit, lo, hi };
 }
 
@@ -563,8 +601,8 @@ function renderView(DATA) {
   els.footer.textContent =
     `Datos: encuestas de opinión pública (múltiples mediciones). ` +
     `Estimaciones puntuales con IC 95% mediante transformación estabilizadora de varianza de Fisher (arcsin√p). ` +
-    `Tendencia: suavizamiento local ponderado (LOESS) sobre proporciones transformadas, con bandas de incertidumbre calculadas en la escala transformada y retrotransformadas a porcentaje. ` +
-    `Estimación agregada: modelo de efectos fijos con ponderación por varianza (escala de Fisher). ` +
+    `Tendencia: regresión local lineal ponderada (LOESS grado 1, kernel tri-cúbico, bw = 35%) sobre proporciones transformadas; la regresión local lineal corrige el sesgo en los extremos de la serie presente en estimadores de grado 0; errores estándar derivados del estimador sandwich con heterogeneidad local estimada por el método DerSimonian-Laird; bandas retrotransformadas a porcentaje. ` +
+    `Estimación agregada: meta-análisis de efectos aleatorios con varianza entre estudios τ² estimada por el método DerSimonian-Laird (escala de Fisher). ` +
     `n por medición entre ${minN} y ${maxN} casos.`;
 }
 

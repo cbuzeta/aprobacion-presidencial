@@ -141,7 +141,6 @@ const els = {
   chartWrap: document.querySelector('.chart-wrap'),
 };
 
-const invLogit = x => 100 / (1 + Math.exp(-x));
 const clamp01 = p => Math.min(0.999999, Math.max(0.000001, p));
 
 function fisherCI(pPct, n, z = 1.96) {
@@ -240,12 +239,12 @@ function fisherTrendWithCI(xs, psPct, ns, bw = 0.35, z = 1.96) {
     const loTheta = Math.max(0, fit[i] - z * seSmooth[i]);
     const hiTheta = Math.min(Math.PI / 2, fit[i] + z * seSmooth[i]);
 
-    lo[i] = 100 * Math.pow(Math.sin(loTheta), 2);
-    hi[i] = 100 * Math.pow(Math.sin(hiTheta), 2);
-   fit[i] = 100 * Math.pow(Math.sin(fit[i]), 2);
-}
+    lo[i]  = 100 * Math.pow(Math.sin(loTheta), 2);
+    hi[i]  = 100 * Math.pow(Math.sin(hiTheta), 2);
+    fit[i] = 100 * Math.pow(Math.sin(fit[i]), 2);
+  }
 
-return { fit, lo, hi };
+  return { fit, lo, hi };
 }
 
 function smoothArray(arr, xs, bw = 0.35) {
@@ -595,7 +594,7 @@ const yMax = Math.min(100, Math.ceil((Math.max(...allY) + 2) / 5) * 5);
             },
           },
           y: {
-            min: 20,
+            min: yMin,
             max: yMax,
             grid: { color: 'rgba(128,128,128,0.07)' },
             ticks: {

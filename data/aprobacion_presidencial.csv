@@ -25,3 +25,5 @@ id,fecha_informe,presidente,encuestadora,producto,aprueba_pct,desaprueba_pct,nr_
 24,12-03-2026,José Antonio Kast,Activa Research,Pulso Ciudadano,47.5,26.3,26.2,1024,21.2,online,117,https://chile.activasite.com/wp-content/uploads/2026/03/261212_PULSO_CIUDADANO_MARZO-Q1_2026_0315_V1.pdf
 25,26-03-2026,José Antonio Kast,Activa Research,Pulso Ciudadano,34.7,48.7,16.6,1012,14,online,118,https://chile.activasite.com/wp-content/uploads/2026/03/260980_PULSO_CIUDADANO_MARZO-Q2_2026_0327_V2.pdf
 26,15-04-2026,José Antonio Kast,Activa Research,Pulso Ciudadano,33.3,53.3,13.4,1141,20,online,119,https://chile.activasite.com/wp-content/uploads/2026/04/261439_PULSO_CIUDADANO_ABRIL_Q1_2026_0419_V2.pdf
+27,26-03-2026,José Antonio Kast,AtlasIntel,Latam Pulse Chile,55.4,43.6,1,6852,11.8,online,Marzo 2026,https://cdn.atlasintel.org/6bc42c11-f1eb-4671-ae14-5a7a6c951e14.pdf
+28,30-04-2026,José Antonio Kast,AtlasIntel,Latam Pulse Chile,53.0,45.9,1.1,4029,7.1,online,Abril 2026,https://cdn.atlasintel.org/8efc931b-3330-4b44-b01d-5a36bf8c83ba.pdf

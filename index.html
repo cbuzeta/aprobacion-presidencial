@@ -148,6 +148,11 @@
     .tooltip-title { font-weight: 500; font-size: 13px; margin-bottom: 6px; }
     .tooltip-row   { display: flex; justify-content: space-between; gap: 14px; color: var(--text2); margin-top: 3px; }
     .tooltip-val   { font-weight: 500; color: var(--text); }
+    .tooltip-url   {
+      margin-top: 7px; padding-top: 6px;
+      border-top: 0.5px solid var(--border);
+      font-size: 10px; color: var(--blue-d); text-align: right;
+    }
 
     footer {
       font-size: 11px;
@@ -173,6 +178,41 @@
       text-decoration: none;
     }
     .attribution a:hover { color: var(--text); text-decoration: underline; }
+
+    /* ── Sources ── */
+    .sources {
+      margin-top: 1.25rem;
+      font-size: 11px;
+    }
+    .sources summary {
+      color: var(--text2);
+      cursor: pointer;
+      user-select: none;
+      padding: 0.5rem 0;
+      border-top: 0.5px solid var(--border);
+    }
+    .sources summary:hover { color: var(--text); }
+    .sources-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 0.75rem;
+    }
+    .sources-table th {
+      text-align: left;
+      color: var(--text2);
+      font-weight: 500;
+      padding: 4px 10px 4px 0;
+      border-bottom: 0.5px solid var(--border);
+    }
+    .sources-table td {
+      padding: 5px 10px 5px 0;
+      color: var(--text2);
+      border-bottom: 0.5px solid rgba(0,0,0,0.04);
+      vertical-align: top;
+    }
+    .sources-table td:first-child { white-space: nowrap; }
+    .sources-table a { color: var(--blue-d); text-decoration: none; }
+    .sources-table a:hover { text-decoration: underline; }
 
     #loading {
       text-align: center;
@@ -209,6 +249,11 @@
   </div>
 
   <footer id="footer"></footer>
+
+  <details class="sources" id="sources">
+    <summary>Fuentes de datos</summary>
+    <div id="sources-body"></div>
+  </details>
 
   <div class="attribution">
     <span>Elaborado por <strong>Cristian Buzeta</strong></span>
@@ -598,12 +643,41 @@ function renderView(DATA) {
     createChart(datasets, xs, yMin, yMax);
   }
 
+  renderSources(DATA);
+
   els.footer.textContent =
     `Datos: encuestas de opinión pública (múltiples mediciones). ` +
     `Estimaciones puntuales con IC 95% mediante transformación estabilizadora de varianza de Fisher (arcsin√p). ` +
     `Tendencia: regresión local lineal ponderada (LOESS grado 1, kernel tri-cúbico, bw = 35%) sobre proporciones transformadas; la regresión local lineal corrige el sesgo en los extremos de la serie presente en estimadores de grado 0; errores estándar derivados del estimador sandwich con heterogeneidad local estimada por el método DerSimonian-Laird; bandas retrotransformadas a porcentaje. ` +
     `Estimación agregada: meta-análisis de efectos aleatorios con varianza entre estudios τ² estimada por el método DerSimonian-Laird (escala de Fisher). ` +
     `n por medición entre ${minN} y ${maxN} casos.`;
+}
+
+function renderSources(DATA) {
+  const body = document.getElementById('sources-body');
+  if (!body) return;
+
+  const rows = DATA.map(d => `
+    <tr>
+      <td>${escHtml(d.fecha)}</td>
+      <td>${escHtml(d.encuestadora)}</td>
+      <td>${escHtml(d.producto)}</td>
+      <td>${escHtml(String(d.inf))}</td>
+      <td>${d.url
+        ? `<a href="${escHtml(d.url)}" target="_blank" rel="noopener">Ver ↗</a>`
+        : '<span style="color:var(--border)">—</span>'}</td>
+    </tr>`).join('');
+
+  body.innerHTML = `
+    <table class="sources-table">
+      <thead>
+        <tr>
+          <th>Fecha</th><th>Encuestadora</th><th>Producto</th>
+          <th>Informe</th><th>Fuente</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>`;
 }
 
 function buildDatasets(xs, DATA, ta, td, apros, desapros) {
@@ -701,18 +775,28 @@ function createChart(datasets, xs, yMin, yMax) {
         },
         onHover: (event, hovered) => {
           const tt = els.tooltip;
-          if (!hovered.length) { tt.style.display = 'none'; return; }
+          if (!hovered.length) {
+            tt.style.display = 'none';
+            els.chartWrap.style.cursor = 'default';
+            return;
+          }
 
           const point   = hovered[0];
           const dataset = chartInstance.data.datasets[point.datasetIndex];
           const raw     = dataset.data[point.index];
-          if (raw._idx === undefined) { tt.style.display = 'none'; return; }
+          if (raw._idx === undefined) {
+            tt.style.display = 'none';
+            els.chartWrap.style.cursor = 'default';
+            return;
+          }
 
           const d     = liveData[raw._idx];
           const cache = liveCache[raw._idx];
           const isA   = dataset.label === 'Aprobación';
           const col   = isA ? '#185FA5' : '#993C1D';
           const ci    = isA ? cache.ciA : cache.ciD;
+
+          els.chartWrap.style.cursor = d.url ? 'pointer' : 'default';
 
           tt.innerHTML = `
             <div class="tooltip-title" style="color:${col}">${escHtml(d.encuestadora)} ${escHtml(d.producto)} · ${escHtml(String(d.inf))}</div>
@@ -723,6 +807,7 @@ function createChart(datasets, xs, yMin, yMax) {
             <div class="tooltip-row"><span>SE efectivo</span><span class="tooltip-val">${ci.se}pp</span></div>
             <div class="tooltip-row"><span>IC 95%</span><span class="tooltip-val">[${ci.lo}, ${ci.hi}]%</span></div>
             <div class="tooltip-row"><span>Neto</span><span class="tooltip-val" style="color:${d.neto >= 0 ? '#185FA5' : '#993C1D'}">${sign(d.neto)}pp</span></div>
+            ${d.url ? '<div class="tooltip-url">Clic para abrir fuente ↗</div>' : ''}
           `;
 
           const rect = els.chartWrap.getBoundingClientRect();
@@ -734,6 +819,16 @@ function createChart(datasets, xs, yMin, yMax) {
           tt.style.display = 'block';
           tt.style.left    = `${lx}px`;
           tt.style.top     = `${ty}px`;
+        },
+
+        onClick: (event, elements) => {
+          if (!elements.length) return;
+          const point   = elements[0];
+          const dataset = chartInstance.data.datasets[point.datasetIndex];
+          const raw     = dataset.data[point.index];
+          if (raw._idx === undefined) return;
+          const url = liveData[raw._idx]?.url;
+          if (url) window.open(url, '_blank', 'noopener');
         },
       },
     });

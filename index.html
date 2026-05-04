@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aprobación Presidencial Chile</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #ffffff;
+      --bg2:      #f5f5f3;
+      --text:     #1a1a1a;
+      --text2:    #666;
+      --border:   rgba(0,0,0,0.1);
+      --blue:     #378ADD;
+      --blue-d:   #185FA5;
+      --red:      #D85A30;
+      --red-d:    #993C1D;
+      --radius:   8px;
+    }
+
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 2rem;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    header { margin-bottom: 2rem; }
+    header h1 { font-size: 20px; font-weight: 500; }
+    header p  { font-size: 13px; color: var(--text2); margin-top: 4px; }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 10px;
+      margin-bottom: 1.5rem;
+    }
+    .stat-card {
+      background: var(--bg2);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+    }
+    .stat-label { font-size: 11px; color: var(--text2); margin-bottom: 4px; }
+    .stat-value { font-size: 22px; font-weight: 500; }
+    .stat-sub   { font-size: 11px; color: var(--text2); margin-top: 2px; }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-bottom: 1rem;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--text2);
+    }
+    .legend-dot  { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .legend-line { width: 20px; height: 2.5px; border-radius: 2px; flex-shrink: 0; }
+
+    .chart-wrap { position: relative; width: 100%; height: 420px; margin-bottom: 1rem; }
+
+    .tooltip {
+      position: absolute;
+      background: var(--bg);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 14px;
+      font-size: 12px;
+      pointer-events: none;
+      display: none;
+      z-index: 10;
+      min-width: 215px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .tooltip-title { font-weight: 500; font-size: 13px; margin-bottom: 6px; }
+    .tooltip-row   { display: flex; justify-content: space-between; gap: 14px; color: var(--text2); margin-top: 3px; }
+    .tooltip-val   { font-weight: 500; color: var(--text); }
+
+    footer {
+      font-size: 11px;
+      color: var(--text2);
+      border-top: 0.5px solid var(--border);
+      padding-top: 0.75rem;
+      line-height: 1.6;
+    }
+
+    #loading {
+      text-align: center;
+      padding: 4rem;
+      color: var(--text2);
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Aprobación presidencial — José Antonio Kast</h1>
+  <p id="subtitle">Cargando datos…</p>
+</header>
+
+<div id="loading">Cargando datos…</div>
+
+<div id="dashboard" style="display:none">
+  <div class="stat-grid" id="stats"></div>
+
+  <div class="legend">
+    <span class="legend-item"><span class="legend-dot"  style="background:var(--blue)"></span>Aprobación</span>
+    <span class="legend-item"><span class="legend-dot"  style="background:var(--red)"></span>Desaprobación</span>
+    <span class="legend-item"><span class="legend-line" style="background:var(--blue-d)"></span>Tendencia aprobación</span>
+    <span class="legend-item"><span class="legend-line" style="background:var(--red-d)"></span>Tendencia desaprobación</span>
+  </div>
+
+  <div class="chart-wrap">
+    <canvas id="chart" aria-label="Serie temporal de aprobación presidencial"></canvas>
+    <div class="tooltip" id="tooltip"></div>
+  </div>
+
+  <footer id="footer"></footer>
+</div>
+
+<script>
+const els = {
+  loading: document.getElementById('loading'),
+  dashboard: document.getElementById('dashboard'),
+  subtitle: document.getElementById('subtitle'),
+  stats: document.getElementById('stats'),
+  footer: document.getElementById('footer'),
+  chart: document.getElementById('chart'),
+  tooltip: document.getElementById('tooltip'),
+  chartWrap: document.querySelector('.chart-wrap'),
+};
+
+const invLogit = x => 100 / (1 + Math.exp(-x));
+const clamp01 = p => Math.min(0.999999, Math.max(0.000001, p));
+
+function fisherCI(pPct, n, z = 1.96) {
+  const p = clamp01(pPct / 100);
+
+  const theta = Math.asin(Math.sqrt(p));
+  const se = 1 / Math.sqrt(4 * n);
+
+  const loTheta = Math.max(0, theta - z * se);
+  const hiTheta = Math.min(Math.PI / 2, theta + z * se);
+
+  return {
+    lo: 100 * Math.pow(Math.sin(loTheta), 2),
+    hi: 100 * Math.pow(Math.sin(hiTheta), 2),
+    se_eff: ((100 * Math.pow(Math.sin(hiTheta), 2)) -
+             (100 * Math.pow(Math.sin(loTheta), 2))) / (2 * z),
+  };
+}
+
+function metaPoolFisher(psPct, ns, z = 1.96) {
+  let W = 0;
+  let weightedTheta = 0;
+
+  for (let i = 0; i < psPct.length; i++) {
+    const p = clamp01(psPct[i] / 100);
+
+    const theta = Math.asin(Math.sqrt(p));
+    const w = 4 * ns[i];   // inverse variance weight
+
+    W += w;
+    weightedTheta += w * theta;
+  }
+
+  const thetaHat = weightedTheta / W;
+  const se = Math.sqrt(1 / W);
+
+  const loTheta = Math.max(0, thetaHat - z * se);
+  const hiTheta = Math.min(Math.PI / 2, thetaHat + z * se);
+
+  return {
+    est: 100 * Math.pow(Math.sin(thetaHat), 2),
+    lo: 100 * Math.pow(Math.sin(loTheta), 2),
+    hi: 100 * Math.pow(Math.sin(hiTheta), 2),
+  };
+}
+
+function fisherTrendWithCI(xs, psPct, ns, bw = 0.35, z = 1.96) {
+  const n = xs.length;
+  const k = Math.min(Math.floor(n * bw), n - 1);
+
+  const fit = new Array(n);
+  const se = new Array(n);
+  const lo = new Array(n);
+  const hi = new Array(n);
+
+  const theta = psPct.map(pct => {
+    const p = clamp01(pct / 100);
+    return Math.asin(Math.sqrt(p));
+  });
+
+  const weights = ns.map(n => 4 * n);
+
+  for (let i = 0; i < n; i++) {
+    const xi = xs[i];
+
+    const dists = xs
+      .map((x, j) => ({ j, d: Math.abs(x - xi) }))
+      .sort((a, b) => a.d - b.d);
+
+    const md = dists[k]?.d || Number.EPSILON;
+
+    let sw = 0;
+    let swTheta = 0;
+
+    for (const { j, d } of dists) {
+      const u = d / md;
+      if (u >= 1) continue;
+
+      const kernel = Math.pow(1 - u * u * u, 3);
+      const w = kernel * weights[j];
+
+      sw += w;
+      swTheta += w * theta[j];
+    }
+
+    const thetaHat = sw > 0 ? swTheta / sw : theta[i];
+    const seTheta = sw > 0 ? Math.sqrt(1 / sw) : 0;
+
+    fit[i] = thetaHat;
+    se[i] = seTheta;
+  }
+
+  const seSmooth = smoothArray(se, xs, 0.45);
+
+  for (let i = 0; i < n; i++) {
+    const loTheta = Math.max(0, fit[i] - z * seSmooth[i]);
+    const hiTheta = Math.min(Math.PI / 2, fit[i] + z * seSmooth[i]);
+
+    lo[i] = 100 * Math.pow(Math.sin(loTheta), 2);
+    hi[i] = 100 * Math.pow(Math.sin(hiTheta), 2);
+   fit[i] = 100 * Math.pow(Math.sin(fit[i]), 2);
+}
+
+return { fit, lo, hi };
+}
+
+function smoothArray(arr, xs, bw = 0.35) {
+  const n = arr.length;
+  const k = Math.min(Math.floor(n * bw), n - 1);
+  const out = new Array(n);
+
+  for (let i = 0; i < n; i++) {
+    const xi = xs[i];
+
+    const dists = xs
+      .map((x, j) => ({ j, d: Math.abs(x - xi) }))
+      .sort((a, b) => a.d - b.d);
+
+    const md = dists[k]?.d || Number.EPSILON;
+
+    let sw = 0;
+    let swy = 0;
+
+    for (const { j, d } of dists) {
+      const u = d / md;
+      if (u >= 1) continue;
+
+      const w = Math.pow(1 - u * u * u, 3);
+
+      sw += w;
+      swy += w * arr[j];
+    }
+
+    out[i] = sw > 0 ? swy / sw : arr[i];
+  }
+
+  return out;
+}
+
+function parseDate(dateStr) {
+  const parts = String(dateStr).split('-');
+  if (parts.length === 3) {
+    return new Date(parts[2], parts[1] - 1, parts[0]);
+  }
+  return new Date(dateStr);
+}
+
+function fmt(dt) {
+  return dt.toLocaleDateString('es-CL', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+function sign(n) {
+  return `${n > 0 ? '+' : ''}${n}`;
+}
+
+Papa.parse('./data/aprobacion_presidencial.csv', {
+  download: true,
+  header: true,
+  dynamicTyping: true,
+
+  error: err => {
+    els.loading.innerHTML =
+      `<b style="color:red">Error al cargar CSV:</b> ${err.message}`;
+  },
+
+  complete: ({ data, errors }) => {
+    const rows = data.filter(r => r.fecha_informe);
+
+    els.loading.textContent =
+      `CSV cargado: ${rows.length} filas. Errores de parse: ${errors.length}. Construyendo gráfico…`;
+
+    const DATA = rows.map(r => {
+      const apro = Number(r.aprueba_pct);
+      const desapro = Number(r.desaprueba_pct);
+      const n = Number(r.n_muestra);
+
+      return {
+        fecha: r.fecha_informe,
+        dt: parseDate(r.fecha_informe),
+        presidente: r.presidente,
+        encuestadora: r.encuestadora,
+        producto: r.producto,
+        apro,
+        desapro,
+        nr: Number(r.nr_pct),
+        n,
+        ci_a: fisherCI(apro, n),
+        ci_d: fisherCI(desapro, n),
+        neto: apro - desapro,
+        inf: r.n_informe,
+        url: r.url_fuente,
+  };
+}).sort((a, b) => a.dt - b.dt);
+
+    buildDashboard(DATA);
+  },
+});
+
+function buildDashboard(DATA) {
+  els.loading.style.display = 'none';
+  els.dashboard.style.display = 'block';
+
+  const encuestadoras = [...new Set(DATA.map(d => d.encuestadora))].join(', ');
+  const first = DATA[0];
+  const last = DATA[DATA.length - 1];
+
+  const xs = DATA.map(d => d.dt.getTime());
+  const apros = DATA.map(d => d.apro);
+  const desapros = DATA.map(d => d.desapro);
+  const ns = DATA.map(d => d.n);
+  const ta = fisherTrendWithCI(xs, apros, ns);
+  const td = fisherTrendWithCI(xs, desapros, ns); 
+
+const metaA = metaPoolFisher(apros, ns);
+const metaD = metaPoolFisher(desapros, ns);
+
+const firstTrendA = ta.fit[0];
+const lastTrendA = ta.fit[ta.fit.length - 1];
+const firstTrendD = td.fit[0];
+const lastTrendD = td.fit[td.fit.length - 1];
+
+const minN = Math.min(...ns);
+const maxN = Math.max(...ns);
+
+els.subtitle.textContent =
+  `${encuestadoras} · ${DATA.length} mediciones · ${first.fecha} – ${last.fecha}`;
+
+els.stats.innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">Tendencia aprobación actual</div>
+      <div class="stat-value" style="color:var(--blue-d)">${lastTrendA.toFixed(1)}%</div>
+      <div class="stat-sub">${sign((lastTrendA - firstTrendA).toFixed(1))}pp desde inicio</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Tendencia desaprobación actual</div>
+      <div class="stat-value" style="color:var(--red-d)">${lastTrendD.toFixed(1)}%</div>
+      <div class="stat-sub">${sign((lastTrendD - firstTrendD).toFixed(1))}pp desde inicio</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Apro. meta-analítica</div>
+      <div class="stat-value" style="color:var(--blue-d)">${metaA.est.toFixed(1)}%</div>
+      <div class="stat-sub">IC 95%: [${metaA.lo.toFixed(1)}, ${metaA.hi.toFixed(1)}]%</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Desapro. meta-analítica</div>
+      <div class="stat-value" style="color:var(--red-d)">${metaD.est.toFixed(1)}%</div>
+      <div class="stat-sub">IC 95%: [${metaD.lo.toFixed(1)}, ${metaD.hi.toFixed(1)}]%</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">n por medición</div>
+      <div class="stat-value" style="font-size:15px;padding-top:4px">${minN}–${maxN}</div>
+      <div class="stat-sub">casos reales</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Mediciones</div>
+      <div class="stat-value">${DATA.length}</div>
+      <div class="stat-sub">${encuestadoras}</div>
+    </div>
+  `;
+
+  const tooltipCache = DATA.map(d => ({
+    fecha: fmt(d.dt),
+    nStr: d.n.toLocaleString('es-CL'),
+    ciA: {
+      lo: d.ci_a.lo.toFixed(1),
+      hi: d.ci_a.hi.toFixed(1),
+      se: d.ci_a.se_eff.toFixed(3),
+    },
+    ciD: {
+      lo: d.ci_d.lo.toFixed(1),
+      hi: d.ci_d.hi.toFixed(1),
+      se: d.ci_d.se_eff.toFixed(3),
+    },
+  }));
+
+const allY = [
+  ...apros,
+  ...desapros,
+  ...DATA.map(d => d.ci_a.lo),
+  ...DATA.map(d => d.ci_a.hi),
+  ...DATA.map(d => d.ci_d.lo),
+  ...DATA.map(d => d.ci_d.hi),
+  ...ta.lo,
+  ...ta.hi,
+  ...td.lo,
+  ...td.hi,
+];
+
+const yMin = Math.max(0, Math.floor((Math.min(...allY) - 2) / 5) * 5);
+const yMax = Math.min(100, Math.ceil((Math.max(...allY) + 2) / 5) * 5);
+
+  const datasets = [
+    {
+      type: 'line',
+      label: 'Banda aprobación inferior',
+      data: xs.map((x, i) => ({ x, y: Number(ta.lo[i].toFixed(2)) })),
+      borderWidth: 0,
+      pointRadius: 0,
+      fill: false,
+      tension: 0,
+      order: 5,
+    },
+    {
+      type: 'line',
+      label: 'Banda aprobación superior',
+      data: xs.map((x, i) => ({ x, y: Number(ta.hi[i].toFixed(2)) })),
+      borderWidth: 0,
+      pointRadius: 0,
+      backgroundColor: 'rgba(24,95,165,0.08)',
+      fill: '-1',
+      tension: 0,
+      order: 5,
+    },
+    {
+      type: 'line',
+      label: 'Banda desaprobación inferior',
+      data: xs.map((x, i) => ({ x, y: Number(td.lo[i].toFixed(2)) })),
+      borderWidth: 0,
+      pointRadius: 0,
+      fill: false,
+      tension: 0,
+      order: 5,
+    },
+    {
+      type: 'line',
+      label: 'Banda desaprobación superior',
+      data: xs.map((x, i) => ({ x, y: Number(td.hi[i].toFixed(2)) })),
+      borderWidth: 0,
+      pointRadius: 0,
+      backgroundColor: 'rgba(153,60,29,0.08)',
+      fill: '-1',
+      tension: 0,
+      order: 5,
+    },
+    {
+      type: 'line',
+      label: 'Tendencia aprobación',
+      data: xs.map((x, i) => ({ x, y: Number(ta.fit[i].toFixed(2)) })),
+      borderColor: '#185FA5',
+      borderWidth: 2.5,
+      pointRadius: 0,
+      fill: false,
+      tension: 0.45,
+      order: 2,
+    },
+    {
+      type: 'line',
+      label: 'Tendencia desaprobación',
+      data: xs.map((x, i) => ({ x, y: Number(td.fit[i].toFixed(2)) })),
+      borderColor: '#993C1D',
+      borderWidth: 2.5,
+      pointRadius: 0,
+      fill: false,
+      tension: 0.45,
+      order: 2,
+    },
+    // Point-level CI: Approval
+    {
+      type: 'bar',
+      label: 'IC aprobación',
+      data: xs.map((x, i) => ({
+        x,
+        y: [DATA[i].ci_a.lo, DATA[i].ci_a.hi],
+      })),
+      parsing: {
+        xAxisKey: 'x',
+        yAxisKey: 'y',
+      },
+      backgroundColor: 'rgba(24,95,165,0.18)',
+      borderColor: 'rgba(24,95,165,0.35)',
+      borderWidth: 1,
+      barThickness: 1,
+      grouped: false,
+      order: 3,
+    },
+    {
+      type: 'bar',
+      label: 'IC desaprobación',
+      data: xs.map((x, i) => ({
+        x,
+        y: [DATA[i].ci_d.lo, DATA[i].ci_d.hi],
+      })),
+      parsing: {
+        xAxisKey: 'x',
+        yAxisKey: 'y',
+      },
+      backgroundColor: 'rgba(153,60,29,0.18)',
+      borderColor: 'rgba(153,60,29,0.35)',
+      borderWidth: 1,
+      barThickness: 1,
+      grouped: false,
+      order: 3,
+    },
+    {
+      type: 'scatter',
+      label: 'Aprobación',
+      data: xs.map((x, i) => ({ x, y: apros[i], _idx: i })),
+      backgroundColor: '#378ADDdd',
+      pointRadius: 4,
+      pointHoverRadius: 6,
+      order: 1,
+    },
+    {
+      type: 'scatter',
+      label: 'Desaprobación',
+      data: xs.map((x, i) => ({ x, y: desapros[i], _idx: i })),
+      backgroundColor: '#D85A30dd',
+      pointRadius: 4,
+      pointHoverRadius: 6,
+      order: 1,
+    },
+  ];
+
+  try {
+    const chart = new Chart(els.chart.getContext('2d'), {
+      type: 'line',
+      data: { datasets },
+      options: {
+        parsing: true,
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { enabled: false },
+        },
+        interaction: {
+          mode: 'nearest',
+          intersect: true,
+        },
+        scales: {
+          x: {
+            type: 'linear',
+            min: Math.min(...xs),
+            max: Math.max(...xs),
+            grid: { color: 'rgba(128,128,128,0.07)' },
+            ticks: {
+              color: '#888',
+              font: { size: 11 },
+              maxRotation: 0,
+              autoSkip: true,
+              maxTicksLimit: 12,
+              callback: v =>
+                new Date(v).toLocaleDateString('es-CL', {
+                  day: 'numeric',
+                  month: 'short',
+                }),
+            },
+          },
+          y: {
+            min: 25,
+            max: yMax,
+            grid: { color: 'rgba(128,128,128,0.07)' },
+            ticks: {
+              color: '#888',
+              font: { size: 11 },
+              callback: v => `${v}%`,
+              stepSize: 5,
+            },
+          },
+        },
+        onHover: (event, elsHover) => {
+          const tt = els.tooltip;
+
+          if (!elsHover.length) {
+            tt.style.display = 'none';
+            return;
+          }
+
+          const point = elsHover[0];
+          const dataset = chart.data.datasets[point.datasetIndex];
+          const raw = dataset.data[point.index];
+
+          if (raw._idx === undefined) {
+            tt.style.display = 'none';
+            return;
+          }
+
+          const d = DATA[raw._idx];
+          const cache = tooltipCache[raw._idx];
+          const isA = dataset.label === 'Aprobación';
+          const col = isA ? '#185FA5' : '#993C1D';
+          const ci = isA ? cache.ciA : cache.ciD;
+
+          tt.innerHTML = `
+            <div class="tooltip-title" style="color:${col}">${d.encuestadora} ${d.producto} · ${d.inf}</div>
+            <div class="tooltip-row"><span>Fecha</span><span class="tooltip-val">${cache.fecha}</span></div>
+            <div class="tooltip-row"><span>${isA ? 'Aprobación' : 'Desaprobación'}</span><span class="tooltip-val">${raw.y}%</span></div>
+            <div class="tooltip-row"><span>NR / NS</span><span class="tooltip-val">${d.nr}%</span></div>
+            <div class="tooltip-row"><span>n muestra</span><span class="tooltip-val">${cache.nStr}</span></div>
+            <div class="tooltip-row"><span>SE efectivo</span><span class="tooltip-val">${ci.se}pp</span></div>
+            <div class="tooltip-row"><span>IC 95%</span><span class="tooltip-val">[${ci.lo}, ${ci.hi}]%</span></div>
+            <div class="tooltip-row"><span>Neto</span><span class="tooltip-val" style="color:${d.neto >= 0 ? '#185FA5' : '#993C1D'}">${sign(d.neto)}pp</span></div>
+          `;
+
+          const rect = els.chartWrap.getBoundingClientRect();
+
+          let lx = event.native.clientX - rect.left + 14;
+          let ty = event.native.clientY - rect.top - 20;
+
+          if (lx + 225 > rect.width) lx -= 235;
+          if (ty < 0) ty = 4;
+
+          tt.style.display = 'block';
+          tt.style.left = `${lx}px`;
+          tt.style.top = `${ty}px`;
+        },
+      },
+    });
+  } catch (e) {
+    els.chartWrap.innerHTML =
+      `<p style="color:red;padding:1rem"><b>Error en Chart.js:</b> ${e.message}</p>`;
+  }
+
+  eels.footer.textContent =
+  `Datos: encuestas de opinión pública (múltiples mediciones). ` +
+  `Estimaciones puntuales con IC 95% mediante transformación estabilizadora de varianza de Fisher (arcsin√p). ` +
+  `Tendencia: suavizamiento local ponderado (LOESS) sobre proporciones transformadas, con bandas de incertidumbre calculadas en la escala transformada y retrotransformadas a porcentaje. ` +
+  `Estimación agregada: modelo de efectos fijos con ponderación por varianza (escala de Fisher). ` +
+  `n por medición entre ${minN} y ${maxN} casos.`;
+}
+</script>
+</body>
+</html>

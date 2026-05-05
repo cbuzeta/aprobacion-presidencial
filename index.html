@@ -256,7 +256,7 @@
   </details>
 
   <div class="attribution">
-    <span>Elaborado por <strong>Cristian Buzeta</strong></span>
+    <span>Elaborado por <a href="https://scholar.google.com/citations?user=di4ydlEAAAAJ" target="_blank" rel="noopener"><strong>Cristian Buzeta</strong></a></span>
     <span>·</span>
     <a href="https://x.com/cbuzeta" target="_blank" rel="noopener">@cbuzeta</a>
     <span>·</span>
@@ -509,7 +509,7 @@ Papa.parse('./data/aprobacion_presidencial.csv', {
           n,
           ci_a:  fisherCI(apro, n),
           ci_d:  fisherCI(desapro, n),
-          neto:  apro - desapro,
+          neto:  Number(r.neto),
           inf:   r.n_informe,
           url:   r.url_fuente,
         };

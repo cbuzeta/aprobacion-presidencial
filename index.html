@@ -427,6 +427,40 @@ function fmt(dt) {
 
 function sign(n) { return `${n > 0 ? '+' : ''}${n}`; }
 
+const fieldPeriodPlugin = {
+  id: 'fieldPeriod',
+  afterDraw(chart) {
+    const { ctx, scales: { x, y }, chartArea } = chart;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(chartArea.left, chartArea.top, chartArea.right - chartArea.left, chartArea.bottom - chartArea.top);
+    ctx.clip();
+
+    const CAP = 4;
+    liveData.forEach(d => {
+      if (!d.dtIni || !d.dtFin || d.dtIni.getTime() === d.dtFin.getTime()) return;
+      const x1 = x.getPixelForValue(d.dtIni.getTime());
+      const x2 = x.getPixelForValue(d.dtFin.getTime());
+
+      [
+        { yVal: d.apro,   color: '#378ADDdd' },
+        { yVal: d.desapro, color: '#D85A30dd' },
+      ].forEach(({ yVal, color }) => {
+        const py = y.getPixelForValue(yVal);
+        ctx.strokeStyle = color;
+        ctx.lineWidth   = 2.5;
+        ctx.lineCap     = 'round';
+        ctx.beginPath();
+        ctx.moveTo(x1, py); ctx.lineTo(x2, py);
+        ctx.moveTo(x1, py - CAP); ctx.lineTo(x1, py + CAP);
+        ctx.moveTo(x2, py - CAP); ctx.lineTo(x2, py + CAP);
+        ctx.stroke();
+      });
+    });
+    ctx.restore();
+  },
+};
+
 function escHtml(s) {
   return String(s)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;')
@@ -454,9 +488,18 @@ Papa.parse('./data/aprobacion_presidencial.csv', {
         const apro    = Number(r.aprueba_pct);
         const desapro = Number(r.desaprueba_pct);
         const n       = Number(r.n_muestra);
+        const dt      = parseDate(r.fecha_informe);
+        const dtIni   = r.fecha_inicio_campo ? parseDate(r.fecha_inicio_campo) : null;
+        const dtFin   = r.fecha_fin_campo    ? parseDate(r.fecha_fin_campo)    : null;
+        const dtPlot  = (dtIni && dtFin)
+          ? new Date((dtIni.getTime() + dtFin.getTime()) / 2)
+          : dt;
         return {
           fecha:        r.fecha_informe,
-          dt:           parseDate(r.fecha_informe),
+          dt,
+          dtPlot,
+          dtIni,
+          dtFin,
           presidente:   r.presidente,
           encuestadora: r.encuestadora,
           producto:     r.producto,
@@ -471,7 +514,7 @@ Papa.parse('./data/aprobacion_presidencial.csv', {
           url:   r.url_fuente,
         };
       })
-      .sort((a, b) => a.dt - b.dt);
+      .sort((a, b) => a.dtPlot - b.dtPlot);
 
     els.loading.style.display   = 'none';
     els.dashboard.style.display = 'block';
@@ -483,7 +526,7 @@ Papa.parse('./data/aprobacion_presidencial.csv', {
 // ── Filters ───────────────────────────────────────────────────────────────────
 function initFilters() {
   const encuestadoras = [...new Set(ALL_DATA.map(d => d.encuestadora))].sort();
-  const dts   = ALL_DATA.map(d => d.dt);
+  const dts   = ALL_DATA.map(d => d.dtPlot);
   const minDt = new Date(Math.min(...dts));
   const maxDt = new Date(Math.max(...dts));
   const minDV = toDateVal(minDt);
@@ -537,8 +580,8 @@ function getFilteredData() {
 
   return ALL_DATA.filter(d =>
     activeEncs.has(d.encuestadora) &&
-    (!fromDt || d.dt >= fromDt) &&
-    (!toDt   || d.dt <= toDt)
+    (!fromDt || d.dtPlot >= fromDt) &&
+    (!toDt   || d.dtPlot <= toDt)
   );
 }
 
@@ -561,17 +604,30 @@ function applyFilters() {
 // ── Render ────────────────────────────────────────────────────────────────────
 function renderView(DATA) {
   liveData  = DATA;
-  liveCache = DATA.map(d => ({
-    fecha: fmt(d.dt),
-    nStr:  d.n.toLocaleString('es-CL'),
-    ciA:   { lo: d.ci_a.lo.toFixed(1), hi: d.ci_a.hi.toFixed(1), se: d.ci_a.se_eff.toFixed(3) },
-    ciD:   { lo: d.ci_d.lo.toFixed(1), hi: d.ci_d.hi.toFixed(1), se: d.ci_d.se_eff.toFixed(3) },
-  }));
+  liveCache = DATA.map(d => {
+    let campo;
+    if (d.dtIni && d.dtFin) {
+      const a = fmt(d.dtIni), b = fmt(d.dtFin);
+      campo = a === b ? a : `${a} – ${b}`;
+    } else {
+      campo = fmt(d.dt);
+    }
+    return {
+      fecha: fmt(d.dt),
+      campo,
+      nStr:  d.n.toLocaleString('es-CL'),
+      ciA:   { lo: d.ci_a.lo.toFixed(1), hi: d.ci_a.hi.toFixed(1), se: d.ci_a.se_eff.toFixed(3) },
+      ciD:   { lo: d.ci_d.lo.toFixed(1), hi: d.ci_d.hi.toFixed(1), se: d.ci_d.se_eff.toFixed(3) },
+    };
+  });
 
   const encuestadoras = [...new Set(DATA.map(d => d.encuestadora))].join(', ');
   const first    = DATA[0];
   const last     = DATA[DATA.length - 1];
-  const xs       = DATA.map(d => d.dt.getTime());
+  const xs       = DATA.map(d => d.dtPlot.getTime());
+  const DAY      = 86400000;
+  const xMin     = Math.min(...DATA.map(d => (d.dtIni || d.dtPlot).getTime())) - DAY;
+  const xMax     = Math.max(...DATA.map(d => (d.dtFin || d.dtPlot).getTime())) + DAY;
   const apros    = DATA.map(d => d.apro);
   const desapros = DATA.map(d => d.desapro);
   const ns       = DATA.map(d => d.n);
@@ -623,8 +679,6 @@ function renderView(DATA) {
 
   const allY = [
     ...apros, ...desapros,
-    ...DATA.map(d => d.ci_a.lo), ...DATA.map(d => d.ci_a.hi),
-    ...DATA.map(d => d.ci_d.lo), ...DATA.map(d => d.ci_d.hi),
     ...ta.lo, ...ta.hi, ...td.lo, ...td.hi,
   ];
   const yMin = Math.max(0,   Math.floor((Math.min(...allY) - 2) / 5) * 5);
@@ -634,13 +688,13 @@ function renderView(DATA) {
 
   if (chartInstance) {
     chartInstance.data.datasets              = datasets;
-    chartInstance.options.scales.x.min      = Math.min(...xs);
-    chartInstance.options.scales.x.max      = Math.max(...xs);
+    chartInstance.options.scales.x.min      = xMin;
+    chartInstance.options.scales.x.max      = xMax;
     chartInstance.options.scales.y.min      = yMin;
     chartInstance.options.scales.y.max      = yMax;
     chartInstance.update('none');
   } else {
-    createChart(datasets, xs, yMin, yMax);
+    createChart(datasets, xMin, xMax, yMin, yMax);
   }
 
   renderSources(DATA);
@@ -715,37 +769,28 @@ function buildDatasets(xs, DATA, ta, td, apros, desapros) {
       borderColor: '#993C1D', borderWidth: 2.5, pointRadius: 0, fill: false, tension: 0.45, order: 2,
     },
     {
-      type: 'bar', label: 'IC aprobación',
-      data: xs.map((x, i) => ({ x, y: [DATA[i].ci_a.lo, DATA[i].ci_a.hi] })),
-      parsing: { xAxisKey: 'x', yAxisKey: 'y' },
-      backgroundColor: 'rgba(24,95,165,0.18)', borderColor: 'rgba(24,95,165,0.35)',
-      borderWidth: 1, barThickness: 1, grouped: false, order: 3,
-    },
-    {
-      type: 'bar', label: 'IC desaprobación',
-      data: xs.map((x, i) => ({ x, y: [DATA[i].ci_d.lo, DATA[i].ci_d.hi] })),
-      parsing: { xAxisKey: 'x', yAxisKey: 'y' },
-      backgroundColor: 'rgba(153,60,29,0.18)', borderColor: 'rgba(153,60,29,0.35)',
-      borderWidth: 1, barThickness: 1, grouped: false, order: 3,
-    },
-    {
       type: 'scatter', label: 'Aprobación',
       data: xs.map((x, i) => ({ x, y: apros[i], _idx: i })),
-      backgroundColor: '#378ADDdd', pointRadius: 4, pointHoverRadius: 6, order: 1,
+      backgroundColor: '#378ADDdd',
+      pointRadius:      DATA.map(d => (d.dtIni && d.dtFin && d.dtIni.getTime() !== d.dtFin.getTime()) ? 0 : 4),
+      pointHoverRadius: 6, hitRadius: 8, order: 1,
     },
     {
       type: 'scatter', label: 'Desaprobación',
       data: xs.map((x, i) => ({ x, y: desapros[i], _idx: i })),
-      backgroundColor: '#D85A30dd', pointRadius: 4, pointHoverRadius: 6, order: 1,
+      backgroundColor: '#D85A30dd',
+      pointRadius:      DATA.map(d => (d.dtIni && d.dtFin && d.dtIni.getTime() !== d.dtFin.getTime()) ? 0 : 4),
+      pointHoverRadius: 6, hitRadius: 8, order: 1,
     },
   ];
 }
 
-function createChart(datasets, xs, yMin, yMax) {
+function createChart(datasets, xMin, xMax, yMin, yMax) {
   try {
     chartInstance = new Chart(els.chart.getContext('2d'), {
       type: 'line',
       data: { datasets },
+      plugins: [fieldPeriodPlugin],
       options: {
         parsing: true,
         responsive: true,
@@ -758,8 +803,8 @@ function createChart(datasets, xs, yMin, yMax) {
         scales: {
           x: {
             type: 'linear',
-            min: Math.min(...xs),
-            max: Math.max(...xs),
+            min: xMin,
+            max: xMax,
             grid: { color: 'rgba(128,128,128,0.07)' },
             ticks: {
               color: '#888', font: { size: 11 },
@@ -800,7 +845,8 @@ function createChart(datasets, xs, yMin, yMax) {
 
           tt.innerHTML = `
             <div class="tooltip-title" style="color:${col}">${escHtml(d.encuestadora)} ${escHtml(d.producto)} · ${escHtml(String(d.inf))}</div>
-            <div class="tooltip-row"><span>Fecha</span><span class="tooltip-val">${cache.fecha}</span></div>
+            <div class="tooltip-row"><span>Trabajo de campo</span><span class="tooltip-val">${cache.campo}</span></div>
+            ${cache.campo !== cache.fecha ? `<div class="tooltip-row"><span>Informe</span><span class="tooltip-val">${cache.fecha}</span></div>` : ''}
             <div class="tooltip-row"><span>${isA ? 'Aprobación' : 'Desaprobación'}</span><span class="tooltip-val">${raw.y}%</span></div>
             <div class="tooltip-row"><span>NR / NS</span><span class="tooltip-val">${d.nr}%</span></div>
             <div class="tooltip-row"><span>n muestra</span><span class="tooltip-val">${cache.nStr}</span></div>

@@ -337,13 +337,13 @@
   </details>
 
   <div class="attribution">
-    <span>Elaborado por <a href="https://scholar.google.com/citations?user=di4ydlEAAAAJ" target="_blank" rel="noopener"><strong>Cristian Buzeta</strong></a></span>
+    <span>Elaborado por <a href="https://scholar.google.com/citations?user=di4ydlEAAAAJ" target="_blank" rel="noopener">Cristian Buzeta</a></span>
     <span>·</span>
     <a href="https://x.com/cbuzeta" target="_blank" rel="noopener">@cbuzeta</a>
     <span>·</span>
     <a href="mailto:cbuzetar@fen.uchile.cl">cbuzetar@fen.uchile.cl</a>
     <span>·</span>
-    <span>Los datos son de cada casa encuestadora y se reproducen con fines informativos.</span>
+    <span>Los datos son de cada casa encuestadora y se reproducen únicamente con fines informativos.</span>
   </div>
 </div>
 
@@ -718,8 +718,8 @@ function getFilteredData() {
 
   return ALL_DATA.filter(d =>
     activeEncs.has(d.encuestadora) &&
-    (!fromDt || d.dtPlot >= fromDt) &&
-    (!toDt   || d.dtPlot <= toDt)
+    (!fromDt || d.dt >= fromDt) &&
+    (!toDt   || d.dt <= toDt)
   );
 }
 

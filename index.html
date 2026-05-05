@@ -786,24 +786,24 @@ function renderView(DATA) {
 
   els.stats.innerHTML = `
     <div class="stat-card">
-      <div class="stat-label">Tendencia aprobación actual</div>
-      <div class="stat-value" style="color:var(--blue-d)">${lastTrendA.toFixed(1)}%</div>
-      <div class="stat-sub">${sign((lastTrendA - firstTrendA).toFixed(1))}pp desde inicio</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Tendencia desaprobación actual</div>
-      <div class="stat-value" style="color:var(--red-d)">${lastTrendD.toFixed(1)}%</div>
-      <div class="stat-sub">${sign((lastTrendD - firstTrendD).toFixed(1))}pp desde inicio</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Aprobación meta-analítica en el período</div>
+      <div class="stat-label">Aprobación retrospectiva (meta-análisis)</div>
       <div class="stat-value" style="color:var(--blue-d)">${metaA.est.toFixed(1)}%</div>
       <div class="stat-sub">IC 95%: [${metaA.lo.toFixed(1)}, ${metaA.hi.toFixed(1)}]%</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">Desaprobación meta-analítica en el período</div>
+      <div class="stat-label">Desaprobación retrospectiva (meta-análisis)</div>
       <div class="stat-value" style="color:var(--red-d)">${metaD.est.toFixed(1)}%</div>
       <div class="stat-sub">IC 95%: [${metaD.lo.toFixed(1)}, ${metaD.hi.toFixed(1)}]%</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Aprobación prospectiva (tendencia)</div>
+      <div class="stat-value" style="color:var(--blue-d)">${lastTrendA.toFixed(1)}%</div>
+      <div class="stat-sub">${sign((lastTrendA - firstTrendA).toFixed(1))}pp desde inicio del período</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Desaprobación prospectiva (tendencia)</div>
+      <div class="stat-value" style="color:var(--red-d)">${lastTrendD.toFixed(1)}%</div>
+      <div class="stat-sub">${sign((lastTrendD - firstTrendD).toFixed(1))}pp desde inicio del período</div>
     </div>
     <div class="stat-card">
       <div class="stat-label">n por medición</div>
@@ -844,6 +844,7 @@ function renderView(DATA) {
   els.footer.innerHTML =
     `<summary>Nota metodológica</summary>` +
     `<div style="margin-top:0.75rem;line-height:1.6">` +
+    `Las estimaciones retrospectivas (meta-análisis de efectos aleatorios) resumen el nivel medio de aprobación y desaprobación durante el período seleccionado; las estimaciones prospectivas (tendencia LOESS) reflejan la trayectoria más reciente y su dirección esperada. ` +
     `Datos: encuestas de opinión pública (múltiples mediciones). ` +
     `Estimaciones puntuales con IC 95% mediante transformación estabilizadora de varianza de Fisher (arcsin√p). ` +
     `Tendencia: regresión local lineal ponderada (LOESS grado 1, kernel tri-cúbico, bw = 35%) sobre proporciones transformadas; la regresión local lineal corrige el sesgo en los extremos de la serie presente en estimadores de grado 0; errores estándar derivados del estimador sandwich con heterogeneidad local estimada por el método DerSimonian-Laird; bandas retrotransformadas a porcentaje. ` +

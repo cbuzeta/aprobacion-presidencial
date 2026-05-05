@@ -576,7 +576,7 @@ Papa.parse('./data/aprobacion_presidencial.csv', {
 
   complete: ({ data }) => {
     ALL_DATA = data
-      .filter(r => r.fecha_informe && r.excluir !== '1')
+      .filter(r => r.fecha_informe && r.excluir != 1)
       .map(r => {
         const apro    = Number(r.aprueba_pct);
         const desapro = Number(r.desaprueba_pct);

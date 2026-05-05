@@ -576,7 +576,7 @@ Papa.parse('./data/aprobacion_presidencial.csv', {
 
   complete: ({ data }) => {
     ALL_DATA = data
-      .filter(r => r.fecha_informe)
+      .filter(r => r.fecha_informe && r.excluir !== '1')
       .map(r => {
         const apro    = Number(r.aprueba_pct);
         const desapro = Number(r.desaprueba_pct);
@@ -804,12 +804,12 @@ function renderView(DATA) {
       <div class="stat-sub">${sign((lastTrendD - firstTrendD).toFixed(1))}pp desde inicio</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">Aprobación meta-analítica</div>
+      <div class="stat-label">Aprobación meta-analítica en el período</div>
       <div class="stat-value" style="color:var(--blue-d)">${metaA.est.toFixed(1)}%</div>
       <div class="stat-sub">IC 95%: [${metaA.lo.toFixed(1)}, ${metaA.hi.toFixed(1)}]%</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">Desaprobación meta-analítica</div>
+      <div class="stat-label">Desaprobación meta-analítica en el período</div>
       <div class="stat-value" style="color:var(--red-d)">${metaD.est.toFixed(1)}%</div>
       <div class="stat-sub">IC 95%: [${metaD.lo.toFixed(1)}, ${metaD.hi.toFixed(1)}]%</div>
     </div>

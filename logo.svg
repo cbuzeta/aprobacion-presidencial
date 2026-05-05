@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" width="80" height="80">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e8e8e8"/>
+      <stop offset="100%" stop-color="#d0d0d0"/>
+    </linearGradient>
+    <linearGradient id="smoothLine" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#888888"/>
+      <stop offset="100%" stop-color="#1a1a1a"/>
+    </linearGradient>
+    <linearGradient id="areaFade" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#555555" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#555555" stop-opacity="0"/>
+    </linearGradient>
+    <clipPath id="clip">
+      <rect width="80" height="80" rx="16"/>
+    </clipPath>
+  </defs>
+
+  <!-- Background -->
+  <rect width="80" height="80" rx="16" fill="url(#bg)"/>
+
+  <g clip-path="url(#clip)">
+    <!-- Subtle area fill under smooth line -->
+    <path d="M 62,40 L 76,40 L 76,80 L 62,80 Z" fill="url(#areaFade)"/>
+
+    <!-- Noisy poll lines (mid gray, clearly distinct tones) -->
+    <path d="M 6,25 L 14,19 L 20,27 L 27,17 L 33,25 L 39,19 L 46,26 L 52,20 C 58,20 60,36 64,40"
+      stroke="#bbbbbb" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 6,40 L 13,46 L 20,33 L 27,42 L 34,35 L 41,41 L 48,35 C 54,35 59,39 64,40"
+      stroke="#999999" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 6,55 L 14,61 L 21,52 L 28,59 L 35,53 L 42,58 L 49,52 C 56,52 60,44 64,40"
+      stroke="#bbbbbb" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- Convergence dot -->
+    <circle cx="64" cy="40" r="2.5" fill="#777777"/>
+
+    <!-- Smooth aggregate line (bold, dark) -->
+    <path d="M 64,40 L 76,40"
+      stroke="url(#smoothLine)" stroke-width="4" fill="none" stroke-linecap="round"/>
+  </g>
+</svg>

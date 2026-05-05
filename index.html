@@ -206,14 +206,6 @@
       font-size: 10px; color: var(--blue-d); text-align: right;
     }
 
-    footer {
-      font-size: 11px;
-      color: var(--text2);
-      border-top: 0.5px solid var(--border);
-      padding-top: 0.75rem;
-      line-height: 1.6;
-    }
-
     .attribution {
       margin-top: 1rem;
       padding-top: 0.6rem;
@@ -337,7 +329,7 @@
     <div class="tooltip" id="tooltip"></div>
   </div>
 
-  <footer id="footer"></footer>
+  <details class="sources" id="footer"></details>
 
   <details class="sources" id="sources">
     <summary>Fuentes de datos</summary>
@@ -642,8 +634,8 @@ function initFilters() {
     <div class="filter-group">
       <span class="filter-label">Serie</span>
       <div class="series-group" id="series-group">
-        <button class="series-pill ${activeSeries.has('apro')    ? 'active' : ''}" data-series="apro"    style="--c:#185FA5">Aprobación</button>
-        <button class="series-pill ${activeSeries.has('desapro') ? 'active' : ''}" data-series="desapro" style="--c:#993C1D">Desaprobación</button>
+        <button class="series-pill ${activeSeries.has('apro')    ? 'active' : ''}" data-series="apro"    style="--c:#378ADD">Aprobación</button>
+        <button class="series-pill ${activeSeries.has('desapro') ? 'active' : ''}" data-series="desapro" style="--c:#D85A30">Desaprobación</button>
         <button class="series-pill ${activeSeries.has('nr')      ? 'active' : ''}" data-series="nr"      style="--c:#555555">NS / NR</button>
       </div>
     </div>
@@ -849,24 +841,30 @@ function renderView(DATA) {
 
   renderSources(DATA);
 
-  els.footer.textContent =
+  els.footer.innerHTML =
+    `<summary>Nota metodológica</summary>` +
+    `<div style="margin-top:0.75rem;line-height:1.6">` +
     `Datos: encuestas de opinión pública (múltiples mediciones). ` +
     `Estimaciones puntuales con IC 95% mediante transformación estabilizadora de varianza de Fisher (arcsin√p). ` +
     `Tendencia: regresión local lineal ponderada (LOESS grado 1, kernel tri-cúbico, bw = 35%) sobre proporciones transformadas; la regresión local lineal corrige el sesgo en los extremos de la serie presente en estimadores de grado 0; errores estándar derivados del estimador sandwich con heterogeneidad local estimada por el método DerSimonian-Laird; bandas retrotransformadas a porcentaje. ` +
     `Estimación agregada: meta-análisis de efectos aleatorios con varianza entre estudios τ² estimada por el método DerSimonian-Laird (escala de Fisher). ` +
-    `n por medición entre ${minN} y ${maxN} casos.`;
+    `n por medición entre ${minN} y ${maxN} casos.` +
+    `</div>`;
 }
 
 function renderSources(DATA) {
   const body = document.getElementById('sources-body');
   if (!body) return;
 
-  const rows = DATA.map(d => `
+  const pairs = DATA.map((d, i) => ({ d, cache: liveCache[i] }))
+    .sort((a, b) => a.d.dt - b.d.dt);
+
+  const rows = pairs.map(({ d, cache }) => `
     <tr>
-      <td>${escHtml(d.fecha)}</td>
+      <td>${escHtml(fmt(d.dt))}</td>
+      <td>${escHtml(cache.campo)}</td>
       <td>${escHtml(d.encuestadora)}</td>
-      <td>${escHtml(d.producto)}</td>
-      <td>${escHtml(String(d.inf))}</td>
+      <td>${escHtml(d.producto)}${d.inf != null && d.inf !== '' ? `<br><span style="font-size:10px;color:var(--text2)">${escHtml(String(d.inf))}</span>` : ''}</td>
       <td>${d.url
         ? `<a href="${escHtml(d.url)}" target="_blank" rel="noopener">Ver ↗</a>`
         : '<span style="color:var(--border)">—</span>'}</td>
@@ -876,8 +874,8 @@ function renderSources(DATA) {
     <table class="sources-table">
       <thead>
         <tr>
-          <th>Fecha</th><th>Encuestadora</th><th>Producto</th>
-          <th>Informe</th><th>Fuente</th>
+          <th>Fecha informe</th><th>Trabajo de campo</th>
+          <th>Encuestadora</th><th>Producto</th><th>Fuente</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>

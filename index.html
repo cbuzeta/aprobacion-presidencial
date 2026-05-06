@@ -342,7 +342,7 @@
     <a href="https://x.com/cbuzeta" target="_blank" rel="noopener">@cbuzeta</a>
     <span>·</span>
     <a href="mailto:cbuzetar@fen.uchile.cl">cbuzetar@fen.uchile.cl</a>
-    <span>·</span>
+    <span style="width:100%"></span>
     <span>Datos de cada casa encuestadora, reproducidos con fines informativos.</span>
     <span>·</span>
     <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px">
@@ -770,14 +770,22 @@ function renderView(DATA) {
   const encuestadoras = [...new Set(DATA.map(d => d.encuestadora))].join(', ');
   const first    = DATA[0];
   const last     = DATA[DATA.length - 1];
-  const xs       = DATA.map(d => d.dtPlot.getTime());
-  const DAY      = 86400000;
-  const xMin     = Math.min(...DATA.map(d => (d.dtIni || d.dtPlot).getTime())) - DAY;
-  const xMax     = Math.max(...DATA.map(d => (d.dtFin || d.dtPlot).getTime())) + DAY;
-  const apros    = DATA.map(d => d.apro);
-  const desapros = DATA.map(d => d.desapro);
-  const nrs      = DATA.map(d => d.nr);
-  const ns       = DATA.map(d => d.n);
+  const DAY = 86400000;
+  const xs = [], apros = [], desapros = [], nrs = [], ns = [];
+  let xMinRaw = Infinity, xMaxRaw = -Infinity;
+  for (const d of DATA) {
+    xs.push(d.dtPlot.getTime());
+    apros.push(d.apro);
+    desapros.push(d.desapro);
+    nrs.push(d.nr);
+    ns.push(d.n);
+    const lo = (d.dtIni || d.dtPlot).getTime();
+    const hi = (d.dtFin || d.dtPlot).getTime();
+    if (lo < xMinRaw) xMinRaw = lo;
+    if (hi > xMaxRaw) xMaxRaw = hi;
+  }
+  const xMin = xMinRaw - DAY;
+  const xMax = xMaxRaw + DAY;
 
   const ta = fisherTrendWithCI(xs, apros, ns);
   const td = fisherTrendWithCI(xs, desapros, ns);
@@ -895,8 +903,7 @@ function renderSources(DATA) {
 }
 
 function buildDatasets(xs, DATA, ta, td, tn, apros, desapros, nrs) {
-  const multiDay = DATA.map(d => d.dtIni && d.dtFin && d.dtIni.getTime() !== d.dtFin.getTime());
-  const dotR     = multiDay.map(m => m ? 0 : 4);
+  const dotR = DATA.map(d => (d.dtIni && d.dtFin && d.dtIni.getTime() !== d.dtFin.getTime()) ? 0 : 4);
   return [
     {
       type: 'line', label: 'Banda aprobación inferior',

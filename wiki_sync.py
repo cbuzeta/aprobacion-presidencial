@@ -39,7 +39,7 @@ WIKI_RAW   = (
     "https://es.wikipedia.org/w/index.php"
     f"?title={urllib.parse.quote(WIKI_TITLE)}&action=raw"
 )
-UA = "AprobacionSyncBot/1.0 (https://github.com/cbuzeta/aprobacion-presidencial)"
+UA = "AprobacionSyncBot/1.0 (https://github.com/cbuzeta/aprobacion-presidencial; cbuzeta@gmail.com)"
 
 # ── pollster lookup ───────────────────────────────────────────────────────────
 # Maps Wikipedia display name → CSV fields that can't be derived from the table.

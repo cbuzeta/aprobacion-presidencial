@@ -415,9 +415,10 @@ function metaPoolFisher(psPct, ns, z = 1.96) {
   const loTheta  = Math.max(0, thetaHat - z * se);
   const hiTheta  = Math.min(Math.PI / 2, thetaHat + z * se);
   return {
-    est: 100 * Math.pow(Math.sin(thetaHat), 2),
-    lo:  100 * Math.pow(Math.sin(loTheta),  2),
-    hi:  100 * Math.pow(Math.sin(hiTheta),  2),
+    est:   100 * Math.pow(Math.sin(thetaHat), 2),
+    lo:    100 * Math.pow(Math.sin(loTheta),  2),
+    hi:    100 * Math.pow(Math.sin(hiTheta),  2),
+    tauSq,
   };
 }
 
@@ -845,7 +846,8 @@ function renderView(DATA) {
     `Estimaciones puntuales con IC 95% mediante transformación estabilizadora de varianza de Fisher (arcsin√p).` +
     `<br><br>` +
     `<strong>Meta-análisis.</strong> ` +
-    `Las estimaciones retrospectivas resumen el nivel medio de aprobación y desaprobación durante el período seleccionado mediante meta-análisis de efectos aleatorios; varianza entre estudios τ² estimada por el método DerSimonian-Laird (escala de Fisher). ` +
+    `Las estimaciones retrospectivas resumen el nivel medio de aprobación y desaprobación durante el período seleccionado mediante meta-análisis de efectos aleatorios; varianza entre estudios τ² estimada por el método DerSimonian-Laird (escala de Fisher) ` +
+    `(aprobación: τ² = ${metaA.tauSq.toFixed(4)}; desaprobación: τ² = ${metaD.tauSq.toFixed(4)}). ` +
     `La heterogeneidad entre encuestadoras (efectos de casa) no se modela explícitamente: queda absorbida en τ², lo que amplía los intervalos de confianza pero puede sesgar el estimador puntual hacia encuestadoras con mayor volumen de publicaciones.` +
     `<br><br>` +
     `<strong>Tendencia LOESS.</strong> ` +

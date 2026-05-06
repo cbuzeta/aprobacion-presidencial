@@ -22,6 +22,7 @@ import sys
 from pathlib import Path
 import urllib.request
 import urllib.parse
+import urllib.error
 
 # Force UTF-8 output on Windows
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
@@ -274,9 +275,15 @@ def main() -> None:
     ap.add_argument("--dry-run", action="store_true", help="preview without writing anything")
     args = ap.parse_args()
 
+    print(f"User-Agent: {_opener.addheaders}")
     print("Checking Wikipedia revision…")
     try:
         revid, timestamp = get_wiki_revision()
+    except urllib.error.HTTPError as e:
+        body = e.read().decode("utf-8", errors="replace")
+        print(f"HTTP {e.code} from Wikipedia: {e.reason}", file=sys.stderr)
+        print(f"Response body:\n{body[:1000]}", file=sys.stderr)
+        sys.exit(1)
     except Exception as e:
         print(f"Error contacting Wikipedia: {e}", file=sys.stderr)
         sys.exit(1)

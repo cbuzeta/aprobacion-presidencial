@@ -713,8 +713,9 @@ function getFilteredData() {
   const fromVal = document.getElementById('date-from')?.value;
   const toVal   = document.getElementById('date-to')?.value;
 
-  const fromDt = fromVal ? new Date(fromVal) : null;
-  const toDt   = toVal   ? new Date(toVal)   : null;
+  const parseDateISO = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); };
+  const fromDt = fromVal ? parseDateISO(fromVal) : null;
+  const toDt   = toVal   ? parseDateISO(toVal)   : null;
 
   return ALL_DATA.filter(d =>
     activeEncs.has(d.encuestadora) &&

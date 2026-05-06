@@ -779,7 +779,7 @@ function renderView(DATA) {
   const metaD      = metaPoolFisher(desapros, ns);
   const firstTrendA = ta.fit[0],               lastTrendA = ta.fit[ta.fit.length - 1];
   const firstTrendD = td.fit[0],               lastTrendD = td.fit[td.fit.length - 1];
-  const totalN = ns.reduce((a, b) => a + b, 0);
+  const minN = Math.min(...ns), maxN = Math.max(...ns);
 
   els.subtitle.textContent =
     `${datasetLabel} · ${DATA.length} mediciones · ${first.fecha} – ${last.fecha}`;
@@ -795,12 +795,7 @@ function renderView(DATA) {
       <div class="stat-value" style="color:var(--red-d)">${metaD.est.toFixed(1)}%</div>
       <div class="stat-sub">IC 95%: [${metaD.lo.toFixed(1)}, ${metaD.hi.toFixed(1)}]%</div>
     </div>
-    <div class="stat-card">
-      <div class="stat-label">N acumulado (meta-análisis)</div>
-      <div class="stat-value" style="font-size:15px;padding-top:4px">${totalN.toLocaleString('es-CL')}</div>
-      <div class="stat-sub">casos en el período</div>
-    </div>
-    <div class="stat-card">
+<div class="stat-card">
       <div class="stat-label">Aprobación prospectiva (tendencia)</div>
       <div class="stat-value" style="color:var(--blue-d)">${lastTrendA.toFixed(1)}%</div>
       <div class="stat-sub">${sign((lastTrendA - firstTrendA).toFixed(1))}pp desde inicio del período</div>
@@ -845,12 +840,13 @@ function renderView(DATA) {
     `<summary>Nota metodológica</summary>` +
     `<div style="margin-top:0.75rem;line-height:1.6">` +
     `<strong>General.</strong> ` +
-    `Datos: encuestas de opinión pública (múltiples mediciones). ` +
+    `Datos: encuestas de opinión pública (múltiples mediciones), mayoritariamente provenientes de paneles en línea no probabilísticos. ` +
+    `Los tamaños de muestra reportados (n entre ${minN} y ${maxN} casos) no necesariamente reflejan observaciones independientes. ` +
     `Estimaciones puntuales con IC 95% mediante transformación estabilizadora de varianza de Fisher (arcsin√p).` +
     `<br><br>` +
     `<strong>Meta-análisis.</strong> ` +
     `Las estimaciones retrospectivas resumen el nivel medio de aprobación y desaprobación durante el período seleccionado mediante meta-análisis de efectos aleatorios; varianza entre estudios τ² estimada por el método DerSimonian-Laird (escala de Fisher). ` +
-    `El N acumulado corresponde a la suma de casos reales por medición en el período.` +
+    `La heterogeneidad entre encuestadoras (efectos de casa) no se modela explícitamente: queda absorbida en τ², lo que amplía los intervalos de confianza pero puede sesgar el estimador puntual hacia encuestadoras con mayor volumen de publicaciones.` +
     `<br><br>` +
     `<strong>Tendencia LOESS.</strong> ` +
     `Las estimaciones prospectivas reflejan la trayectoria más reciente mediante regresión local lineal ponderada (grado 1, kernel tri-cúbico, bw = 35%) sobre proporciones transformadas; el n por medición entra como peso de cada observación. ` +

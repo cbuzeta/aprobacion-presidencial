@@ -41,6 +41,9 @@ WIKI_RAW   = (
 )
 UA = "AprobacionSyncBot/1.0 (https://github.com/cbuzeta/aprobacion-presidencial; cbuzeta@gmail.com)"
 
+_opener = urllib.request.build_opener()
+_opener.addheaders = [("User-Agent", UA)]
+
 # ── pollster lookup ───────────────────────────────────────────────────────────
 # Maps Wikipedia display name → CSV fields that can't be derived from the table.
 # Add new entries here whenever a new pollster appears on Wikipedia.
@@ -72,8 +75,7 @@ CSV_FIELDS = [
 # ── Wikipedia helpers ─────────────────────────────────────────────────────────
 
 def _get(url: str) -> bytes:
-    req = urllib.request.Request(url, headers={"User-Agent": UA})
-    with urllib.request.urlopen(req, timeout=15) as r:
+    with _opener.open(url, timeout=15) as r:
         return r.read()
 
 

@@ -844,12 +844,18 @@ function renderView(DATA) {
   els.footer.innerHTML =
     `<summary>Nota metodológica</summary>` +
     `<div style="margin-top:0.75rem;line-height:1.6">` +
-    `Las estimaciones retrospectivas (meta-análisis de efectos aleatorios) resumen el nivel medio de aprobación y desaprobación durante el período seleccionado; las estimaciones prospectivas (tendencia LOESS) reflejan la trayectoria más reciente y su dirección esperada. ` +
+    `<strong>General.</strong> ` +
     `Datos: encuestas de opinión pública (múltiples mediciones). ` +
     `Estimaciones puntuales con IC 95% mediante transformación estabilizadora de varianza de Fisher (arcsin√p). ` +
-    `Tendencia: regresión local lineal ponderada (LOESS grado 1, kernel tri-cúbico, bw = 35%) sobre proporciones transformadas; la regresión local lineal corrige el sesgo en los extremos de la serie presente en estimadores de grado 0; errores estándar derivados del estimador sandwich con heterogeneidad local estimada por el método DerSimonian-Laird; bandas retrotransformadas a porcentaje. ` +
-    `Estimación agregada: meta-análisis de efectos aleatorios con varianza entre estudios τ² estimada por el método DerSimonian-Laird (escala de Fisher). ` +
     `n por medición entre ${minN} y ${maxN} casos.` +
+    `<br><br>` +
+    `<strong>Meta-análisis.</strong> ` +
+    `Las estimaciones retrospectivas resumen el nivel medio de aprobación y desaprobación durante el período seleccionado mediante meta-análisis de efectos aleatorios; varianza entre estudios τ² estimada por el método DerSimonian-Laird (escala de Fisher).` +
+    `<br><br>` +
+    `<strong>Tendencia LOESS.</strong> ` +
+    `Las estimaciones prospectivas reflejan la trayectoria más reciente mediante regresión local lineal ponderada (grado 1, kernel tri-cúbico, bw = 35%) sobre proporciones transformadas. ` +
+    `La regresión local lineal corrige el sesgo en los extremos de la serie presente en estimadores de grado 0. ` +
+    `Errores estándar derivados del estimador sandwich con heterogeneidad local estimada por DerSimonian-Laird; bandas retrotransformadas a porcentaje.` +
     `</div>`;
 }
 

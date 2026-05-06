@@ -275,7 +275,6 @@ def main() -> None:
     ap.add_argument("--dry-run", action="store_true", help="preview without writing anything")
     args = ap.parse_args()
 
-    print(f"User-Agent: {_opener.addheaders}")
     print("Checking Wikipedia revision…")
     try:
         revid, timestamp = get_wiki_revision()

@@ -12,6 +12,9 @@ aprobacion-presidencial/
 │   ├── aprobacion_presidencial.csv   # Base de datos maestra
 │   ├── encuestadoras.csv             # Catálogo de encuestadoras
 │   └── .wiki_state.json              # Estado de sincronización (auto-generado)
+├── .github/
+│   └── workflows/
+│       └── wiki_sync.yml             # Acción diaria de sincronización
 ├── logo.svg
 ├── logotype.svg
 └── README.md
@@ -74,17 +77,16 @@ El script requiere solo la biblioteca estándar de Python (sin dependencias exte
 
 **Seguimiento manual tras cada sincronización:** el script deja en blanco `n_informe` y usa la fecha fin de campo como proxy de `fecha_informe`; ambos campos pueden requerir corrección manual.
 
-**Encuestadoras no cubiertas por Wikipedia:** Black & White debe agregarse manualmente a Wikipedia antes de que el script la incorpore. AtlasIntel está marcada como `excluir = 1`.
+**Encuestadoras no cubiertas por Wikipedia:** Black & White debe agregarse manualmente a Wikipedia antes de que el script la incorpore. El listado completo de informes publicados está en https://www.blackwhite.global/s-projects-side-by-side. AtlasIntel está marcada como `excluir = 1`.
 
 **Falso positivo conocido:** la medición «después» del experimento pre-post de Panel Ciudadano (16 Abr 2026, 39%/49%, n=1030) siempre aparece como candidata; no debe incorporarse al CSV.
 
 ### Rutina diaria automatizada
 
-Una rutina remota en Claude Code ejecuta `wiki_sync.py` cada día a las 12:00 UTC (~8am hora de Santiago en invierno) y, si hay filas nuevas, hace commit y push automáticamente.
+Un workflow de GitHub Actions (`.github/workflows/wiki_sync.yml`) ejecuta `wiki_sync.py` cada día a las 12:00 UTC (~8am hora de Santiago en invierno) y, si hay filas nuevas, hace commit y push automáticamente.
 
-- **ID de rutina:** `trig_014yGsqF2S8haYiapibxCPWh`
-- **Gestión:** https://claude.ai/code/routines/trig_014yGsqF2S8haYiapibxCPWh
-- **Requisito:** la GitHub App de Claude debe estar instalada en el repositorio para que la rutina pueda clonar y hacer push.
+- **Ver ejecuciones:** https://github.com/cbuzeta/aprobacion-presidencial/actions/workflows/wiki_sync.yml
+- **Disparar manualmente:** GitHub → Actions → Wiki Sync → Run workflow (o `gh workflow run wiki_sync.yml`)
 
 ## Cómo agregar mediciones manualmente
 

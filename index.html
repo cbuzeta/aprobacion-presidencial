@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Metaseñal</title>
+  <title>MetaAprobación</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <style>
@@ -269,40 +269,23 @@
 <body>
 
 <header>
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 80" height="44" aria-label="Metaseñal">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 80" height="44" aria-label="MetaAprobación">
     <defs>
       <linearGradient id="ms-bg" x1="0%" y1="0%" x2="100%" y2="100%">
         <stop offset="0%" stop-color="#e8e8e8"/>
         <stop offset="100%" stop-color="#d0d0d0"/>
       </linearGradient>
-      <linearGradient id="ms-line" x1="0%" y1="0%" x2="100%" y2="0%">
-        <stop offset="0%" stop-color="#888888"/>
-        <stop offset="100%" stop-color="#1a1a1a"/>
-      </linearGradient>
-      <linearGradient id="ms-area" x1="0%" y1="0%" x2="0%" y2="100%">
-        <stop offset="0%" stop-color="#555555" stop-opacity="0.08"/>
-        <stop offset="100%" stop-color="#555555" stop-opacity="0"/>
-      </linearGradient>
-      <clipPath id="ms-clip">
-        <rect width="80" height="80" rx="16"/>
-      </clipPath>
     </defs>
     <rect width="80" height="80" rx="16" fill="url(#ms-bg)"/>
-    <g clip-path="url(#ms-clip)">
-      <path d="M 62,40 L 76,40 L 76,80 L 62,80 Z" fill="url(#ms-area)"/>
-      <path d="M 6,25 L 14,19 L 20,27 L 27,17 L 33,25 L 39,19 L 46,26 L 52,20 C 58,20 60,36 64,40"
-        stroke="#bbbbbb" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M 6,40 L 13,46 L 20,33 L 27,42 L 34,35 L 41,41 L 48,35 C 54,35 59,39 64,40"
-        stroke="#999999" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M 6,55 L 14,61 L 21,52 L 28,59 L 35,53 L 42,58 L 49,52 C 56,52 60,44 64,40"
-        stroke="#bbbbbb" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-      <circle cx="64" cy="40" r="2.5" fill="#777777"/>
-      <path d="M 64,40 L 76,40" stroke="url(#ms-line)" stroke-width="4" fill="none" stroke-linecap="round"/>
-    </g>
+    <rect x="13" y="13" width="54" height="54" rx="9"
+      fill="white" fill-opacity="0.2" stroke="#aaaaaa" stroke-width="3"/>
+    <path d="M 23,41 L 35,54 L 58,25"
+      stroke="#666666" stroke-width="5" fill="none"
+      stroke-linecap="round" stroke-linejoin="round"/>
     <text x="96" y="40" dominant-baseline="middle"
       font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif"
       font-size="32" letter-spacing="-0.5">
-      <tspan font-weight="300" fill="#999999">Meta</tspan><tspan font-weight="600" fill="#1a1a1a">señal</tspan>
+      <tspan font-weight="300" fill="#999999">Meta</tspan><tspan font-weight="600" fill="#1a1a1a">Aprobación</tspan>
     </text>
   </svg>
   <p id="subtitle">Cargando datos…</p>
@@ -337,7 +320,7 @@
   </details>
 
   <div class="attribution">
-    <span>Elaborado por <a href="https://scholar.google.com/citations?user=di4ydlEAAAAJ" target="_blank" rel="noopener">Cristian Buzeta</a></span>
+    <span>Elaborado por <a href="https://scholar.google.com/citations?user=di4ydlEAAAAJ" target="_blank" rel="noopener">Cristian Buzeta</a> con la ayuda de Claude</span>
     <span>·</span>
     <a href="https://x.com/cbuzeta" target="_blank" rel="noopener">@cbuzeta</a>
     <span>·</span>
@@ -875,7 +858,7 @@ function renderSources(DATA) {
   if (!body) return;
 
   const pairs = DATA.map((d, i) => ({ d, cache: liveCache[i] }))
-    .sort((a, b) => a.d.dt - b.d.dt);
+    .sort((a, b) => b.d.dt - a.d.dt);
 
   const rows = pairs.map(({ d, cache }) => `
     <tr>
@@ -1035,7 +1018,7 @@ function createChart(datasets, xMin, xMax, yMin, yMax) {
           tt.innerHTML = `
             <div class="tooltip-title" style="color:${col}">${escHtml(d.encuestadora)} ${escHtml(d.producto)} · ${escHtml(String(d.inf))}</div>
             <div class="tooltip-row"><span>Trabajo de campo</span><span class="tooltip-val">${cache.campo}</span></div>
-            ${cache.campo !== cache.fecha ? `<div class="tooltip-row"><span>Informe</span><span class="tooltip-val">${cache.fecha}</span></div>` : ''}
+            <div class="tooltip-row"><span>Informe</span><span class="tooltip-val">${cache.fecha}</span></div>
             ${isNR
               ? `<div class="tooltip-row"><span>NS / NR</span><span class="tooltip-val">${raw.y}%</span></div>`
               : `<div class="tooltip-row"><span>${isA ? 'Aprobación' : 'Desaprobación'}</span><span class="tooltip-val">${raw.y}%</span></div>

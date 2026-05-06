@@ -58,6 +58,13 @@ POLLSTERS: dict[str, dict] = {
     "AtlasIntel":      {"encuestadora": "AtlasIntel",          "producto": "Latam Pulse Chile", "modalidad": "online", "excluir": 1},
 }
 
+# Rows that exist on Wikipedia but must never be imported.
+# Key matches _key(): (encuestadora, fecha_inicio_campo, aprueba_pct, desaprueba_pct)
+# Panel Ciudadano Apr-16-2026: "after" wave of a before/after experiment, not a standalone poll.
+KNOWN_FALSE_POSITIVES: set[tuple] = {
+    ("Panel Ciudadano-UDD", "16-04-2026", "39", "49"),
+}
+
 MONTH_ES: dict[str, str] = {
     "Ene": "01", "Feb": "02", "Mar": "03", "Abr": "04",
     "May": "05", "Jun": "06", "Jul": "07", "Ago": "08",
@@ -301,7 +308,9 @@ def main() -> None:
 
     existing      = load_csv()
     existing_keys = {_key(r) for r in existing}
-    new_rows      = [r for r in wiki_rows if _key(r) not in existing_keys]
+    new_rows      = [r for r in wiki_rows
+                     if _key(r) not in existing_keys
+                     and _key(r) not in KNOWN_FALSE_POSITIVES]
 
     if not new_rows:
         print("CSV is already up to date — no new rows to add.")

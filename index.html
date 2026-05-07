@@ -191,6 +191,23 @@
 
     .chart-wrap { position: relative; width: 100%; height: 420px; margin-bottom: 1rem; }
 
+    .chart-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 0.5rem;
+    }
+    .btn-export {
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      color: var(--text2);
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .btn-export:hover { color: var(--text); border-color: rgba(0,0,0,0.2); }
+
     .tooltip {
       position: absolute;
       background: var(--bg);
@@ -318,6 +335,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <span class="legend-item"><span class="legend-line" style="background:#777"></span>Tendencia NS / NR</span>
   </div>
 
+  <div class="chart-actions">
+    <button class="btn-export" id="btn-export-png" title="Descargar gráfico como PNG">↓ PNG</button>
+  </div>
   <div class="chart-wrap">
     <canvas id="chart" aria-label="Serie temporal de aprobación de gobierno"></canvas>
     <div class="tooltip" id="tooltip"></div>
@@ -797,12 +817,12 @@ function renderView(DATA) {
     <div class="stat-card">
       <div class="stat-label">Aprobación retrospectiva (meta-análisis)</div>
       <div class="stat-value" style="color:var(--blue-d)">${metaA.est.toFixed(1)}%</div>
-      <div class="stat-sub">IC 95%: [${metaA.lo.toFixed(1)}, ${metaA.hi.toFixed(1)}]%</div>
+      <div class="stat-sub">IC 95%<sup>†</sup>: [${metaA.lo.toFixed(1)}, ${metaA.hi.toFixed(1)}]%</div>
     </div>
     <div class="stat-card">
       <div class="stat-label">Desaprobación retrospectiva (meta-análisis)</div>
       <div class="stat-value" style="color:var(--red-d)">${metaD.est.toFixed(1)}%</div>
-      <div class="stat-sub">IC 95%: [${metaD.lo.toFixed(1)}, ${metaD.hi.toFixed(1)}]%</div>
+      <div class="stat-sub">IC 95%<sup>†</sup>: [${metaD.lo.toFixed(1)}, ${metaD.hi.toFixed(1)}]%</div>
     </div>
 <div class="stat-card">
       <div class="stat-label">Aprobación prospectiva (tendencia)</div>
@@ -851,7 +871,10 @@ function renderView(DATA) {
     `<strong>General.</strong> ` +
     `Datos: encuestas de opinión pública (múltiples mediciones), mayoritariamente provenientes de paneles en línea no probabilísticos. ` +
     `Los tamaños de muestra reportados (n entre ${minN} y ${maxN} casos) no necesariamente reflejan observaciones independientes. ` +
-    `Estimaciones puntuales con IC 95% mediante transformación estabilizadora de varianza de Fisher (arcsin√p).` +
+    `Los IC se calculan mediante transformación estabilizadora de varianza de Fisher (arcsin√p).` +
+    `<br><br>` +
+    `<sup>†</sup> <strong>Sobre los IC 95%.</strong> ` +
+    `Los intervalos de confianza suponen muestreo aleatorio simple. La mayoría de las encuestas incluidas usan paneles no probabilísticos, por lo que estos valores son orientativos y subestiman la incertidumbre real; no deben leerse como garantías probabilísticas.` +
     `<br><br>` +
     `<strong>Meta-análisis.</strong> ` +
     `Las estimaciones retrospectivas resumen el nivel medio de aprobación y desaprobación durante el período seleccionado mediante meta-análisis de efectos aleatorios; varianza entre estudios τ² estimada por el método DerSimonian-Laird (escala de Fisher) ` +
@@ -1035,8 +1058,6 @@ function createChart(datasets, xMin, xMax, yMin, yMax) {
               ? `<div class="tooltip-row"><span>NS / NR</span><span class="tooltip-val">${raw.y}%</span></div>`
               : `<div class="tooltip-row"><span>${isA ? 'Aprobación' : 'Desaprobación'}</span><span class="tooltip-val">${raw.y}%</span></div>
             <div class="tooltip-row"><span>NS / NR</span><span class="tooltip-val">${d.nr}%</span></div>
-            <div class="tooltip-row"><span>SE efectivo</span><span class="tooltip-val">${ci.se}pp</span></div>
-            <div class="tooltip-row"><span>IC 95%</span><span class="tooltip-val">[${ci.lo}, ${ci.hi}]%</span></div>
             <div class="tooltip-row"><span>Neto</span><span class="tooltip-val" style="color:${d.neto >= 0 ? '#185FA5' : '#993C1D'}">${sign(d.neto)}pp</span></div>`}
             <div class="tooltip-row"><span>n muestra</span><span class="tooltip-val">${cache.nStr}</span></div>
             ${d.url ? '<div class="tooltip-url">Clic para abrir fuente ↗</div>' : ''}
@@ -1069,6 +1090,23 @@ function createChart(datasets, xMin, xMax, yMin, yMax) {
       `<p style="color:red;padding:1rem"><b>Error en Chart.js:</b> ${e.message}</p>`;
   }
 }
+
+// ── Export ────────────────────────────────────────────────────────────────────
+document.getElementById('btn-export-png').addEventListener('click', () => {
+  if (!chartInstance) return;
+  const src = els.chart;
+  const tmp = document.createElement('canvas');
+  tmp.width  = src.width;
+  tmp.height = src.height;
+  const ctx = tmp.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, tmp.width, tmp.height);
+  ctx.drawImage(src, 0, 0);
+  const link = document.createElement('a');
+  link.download = 'metaaprobacion.png';
+  link.href = tmp.toDataURL('image/png');
+  link.click();
+});
 </script>
 </body>
 </html>

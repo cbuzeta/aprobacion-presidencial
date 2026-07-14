@@ -1,7 +1,7 @@
 ﻿id,fecha_informe,fecha_inicio_campo,fecha_fin_campo,presidente,encuestadora,producto,aprueba_pct,desaprueba_pct,nr_pct,n_muestra,aprueba_gob_pct,desaprueba_gob_pct,nr_gob_pct,neto_gob,modalidad,n_informe,excluir,url_fuente
 1,15-03-2026,11-03-2026,13-03-2026,José Antonio Kast,Criteria,Agenda Criteria,46,30,24,804,,,,,online,15 de Marzo 2026,0,https://www.criteria.cl/site/wp-content/uploads/2026/03/Agenda_Criteria_15_Marzo_2026.pdf
 2,15-03-2026,13-03-2026,13-03-2026,José Antonio Kast,Cadem,Plaza Pública,57,34,9,1000,,,,,online,637,0,https://www.biobiochile.cl/assets/bbcl-embed/#/static/documentos/2026/03/track-pp-637-marzo-s2-m2-vf.pdf
-3,15-03-2026,12-03-2026,13-03-2026,José Antonio Kast,Activa Research,Pulso Ciudadano,47.5,26.3,26.2,1024,36.5,30.5,33,6,online,117,0,https://chile.activasite.com/wp-content/uploads/2026/03/261212_PULSO_CIUDADANO_MARZO-Q1_2026_0315_V1.pdf
+3,15-03-2026,12-03-2026,13-03-2026,José Antonio Kast,Activa Research,Pulso Ciudadano,47.5,26.3,26.2,1024,36.5,30.5,33,6,online,117 - Marzo Q1 2026,0,https://chile.activasite.com/wp-content/uploads/2026/03/261212_PULSO_CIUDADANO_MARZO-Q1_2026_0315_V1.pdf
 4,16-03-2026,13-03-2026,13-03-2026,José Antonio Kast,Panel Ciudadano-UDD,Panel Ciudadano,59,18,23,1792,,,,,online,13 de Marzo 2026,0,https://panelciudadano.cl/wp-content/uploads/2026/03/PanelCiudadano_UDD_Primera-semana-JAK.pdf
 5,17-03-2026,17-03-2026,17-03-2026,José Antonio Kast,Cadem,Plaza Pública,57,36,7,1017,,,,,online,638,0,https://es.scribd.com/document/1015948347/Track-PP-638-Marzo-S3-M1-VF
 6,19-03-2026,17-03-2026,18-03-2026,José Antonio Kast,Black & White,B&W,44,44,12,1312,,,,,online,Primeras Medidas y Actualidad,0,https://static.emol.cl/emol50/documentos/archivos/2026/03/19/file_20260319164150.pdf
@@ -14,7 +14,7 @@
 13,26-03-2026,24-03-2026,24-03-2026,José Antonio Kast,Black & White,B&W,36,56,8,1058,,,,,online,MEPCO y Actualidad,0,https://static.emol.cl/emol50/documentos/archivos/2026/03/26/file_20260326131435.pdf
 14,26-03-2026,26-03-2026,26-03-2026,José Antonio Kast,Cadem,Plaza Pública,43,51,6,1026,,,,,online,641,0,https://www.biobiochile.cl/assets/bbcl-embed/#/static/documentos/2026/03/track-pp-641-marzo-s4-m2-vf.pdf
 15,29-03-2026,25-03-2026,26-03-2026,José Antonio Kast,Criteria,Agenda Criteria,43,47,10,800,,,,,online,29 de Marzo 2026,0,https://www.criteria.cl/site/wp-content/uploads/2026/03/Agenda_Criteria_29_Marzo_2026.pdf
-16,27-03-2026,26-03-2026,27-03-2026,José Antonio Kast,Activa Research,Pulso Ciudadano,34.7,48.7,16.6,1012,29,53.6,17.4,-24.6,online,118,0,https://chile.activasite.com/wp-content/uploads/2026/03/260980_PULSO_CIUDADANO_MARZO-Q2_2026_0327_V2.pdf
+16,27-03-2026,26-03-2026,27-03-2026,José Antonio Kast,Activa Research,Pulso Ciudadano,34.7,48.7,16.6,1012,29,53.6,17.4,-24.6,online,118 - Marzo Q2 2026,0,https://chile.activasite.com/wp-content/uploads/2026/03/260980_PULSO_CIUDADANO_MARZO-Q2_2026_0327_V2.pdf
 17,01-04-2026,31-03-2026,31-03-2026,José Antonio Kast,Black & White,B&W,42,52,6,1026,,,,,online,Instalación del Gobierno y Actualidad,0,https://www.blackwhite.global/_files/ugd/4e2a69_044e905bbad94df884aa2b6b434f3d53.pdf
 18,01-04-2026,01-04-2026,01-04-2026,José Antonio Kast,Cadem,Plaza Pública,44,52,4,1015,,,,,online,642,0,https://www.biobiochile.cl/assets/bbcl-embed/#/static/documentos/2026/04/track-pp-642-abril-s1-m1-vf.pdf
 19,05-04-2026,31-03-2026,02-04-2026,José Antonio Kast,Criteria,Agenda Criteria,42,46,12,800,,,,,online,5 de Abril 2026,0,https://www.criteria.cl/site/wp-content/uploads/2026/04/Agenda_Criteria_5_Abril_2026_x7br4.pdf
@@ -28,7 +28,7 @@
 27,18-04-2026,15-04-2026,16-04-2026,José Antonio Kast,Panel Ciudadano-UDD,Panel Ciudadano,39,51,10,1030,,,,,online,18 de Abril 2026,0,https://panelciudadano.cl/wp-content/uploads/2026/04/PanelCiudadanoUDD_LeyReconstruccionNacional.pdf
 28,19-04-2026,15-04-2026,16-04-2026,José Antonio Kast,Criteria,Agenda Criteria,37,49,14,820,,,,,online,19 de Abril 2026,0,https://www.criteria.cl/site/wp-content/uploads/2026/04/Agenda_Criteria_19_Abril_2026_3fTdf.pdf
 29,17-04-2026,17-04-2026,17-04-2026,José Antonio Kast,Cadem,Plaza Pública,43,51,6,1000,,,,,online,647,0,https://cadem.cl/wp-content/uploads/2026/04/Track-PP-647-Abril-S3-M2-VF.pdf
-30,19-04-2026,15-04-2026,17-04-2026,José Antonio Kast,Activa Research,Pulso Ciudadano,33.3,53.3,13.4,1141,27,59.5,13.5,-32.5,online,119,0,https://chile.activasite.com/wp-content/uploads/2026/04/261439_PULSO_CIUDADANO_ABRIL_Q1_2026_0419_V2.pdf
+30,19-04-2026,15-04-2026,17-04-2026,José Antonio Kast,Activa Research,Pulso Ciudadano,33.3,53.3,13.4,1141,27,59.5,13.5,-32.5,online,119 - Abril Q1 2026,0,https://chile.activasite.com/wp-content/uploads/2026/04/261439_PULSO_CIUDADANO_ABRIL_Q1_2026_0419_V2.pdf
 31,22-04-2026,16-04-2026,20-04-2026,José Antonio Kast,TuInfluyes.com,DataInfluye,33,47,20,1120,32,47,21,-15,online,Abril 2026,0,https://www.paneltuinfluyes.com/e/abril-2026?
 32,23-04-2026,22-04-2026,22-04-2026,José Antonio Kast,Black & White,B&W,40,50,10,1024,,,,,online,Plan de Reconstrucción Nacional y Actualidad,0,https://static.emol.cl/emol50/documentos/archivos/2026/04/23/file_20260423164706.pdf
 33,23-04-2026,23-04-2026,23-04-2026,José Antonio Kast,Cadem,Plaza Pública,42,50,8,1002,,,,,online,648,0,https://cadem.cl/wp-content/uploads/2026/04/Track-PP-648-Abril-S4-M1-VF.pdf
@@ -38,43 +38,43 @@
 37,28-04-2026,28-04-2026,28-04-2026,José Antonio Kast,Black & White,B&W,37,52,10,977,,,,,online,Conmemoraciones de Mayo y Actualidad,0,https://www.blackwhite.global/_files/ugd/4e2a69_5e413141199e458c9c1d38f0e3ee0852.pdf
 38,30-04-2026,24-04-2026,28-04-2026,José Antonio Kast,AtlasIntel,Latam Pulse Chile,53.0,45.9,1.1,4029,,,,,online,Abril 2026,1,https://cdn.atlasintel.org/8efc931b-3330-4b44-b01d-5a36bf8c83ba.pdf
 39,03-05-2026,29-04-2026,29-04-2026,José Antonio Kast,Criteria,Agenda Criteria,38,51,11,800,,,,,online,3 de Mayo 2026,0,https://www.criteria.cl/site/wp-content/uploads/2026/05/Agenda_Criteria_3_Mayo_2026_5fGqV.pdf
-40,03-05-2026,29-04-2026,30-04-2026,José Antonio Kast,Activa Research,Pulso Ciudadano,29.1,55.6,15.3,1009,,,,,online,Abril Q2 2026,0,https://chile.activasite.com/wp-content/uploads/2026/05/260981_PULSO_CIUDADANO_ABRIL_Q2_2026_0430_V1.pdf
+40,03-05-2026,29-04-2026,30-04-2026,José Antonio Kast,Activa Research,Pulso Ciudadano,29.1,55.6,15.3,1009,,,,,online,120 - Abril Q2 2026,0,https://chile.activasite.com/wp-content/uploads/2026/05/260981_PULSO_CIUDADANO_ABRIL_Q2_2026_0430_V1.pdf
 41,01-05-2026,01-05-2026,01-05-2026,José Antonio Kast,Cadem,Plaza Pública,39,57,4,1004,,,,,online,651,0,https://cadem.cl/wp-content/uploads/2026/05/Track-PP-651-Mayo-S1-M1-VF.pdf
 42,07-05-2026,06-05-2026,06-05-2026,José Antonio Kast,Cadem,Plaza Pública,38,56,6,1003,,,,,online,652,0,https://cadem.cl/wp-content/uploads/2026/05/Track-PP-652-Mayo-S2-M1.pdf
 43,08-05-2026,08-05-2026,08-05-2026,José Antonio Kast,Cadem,Plaza Pública,42,53,5,1004,,,,,online,653,0,https://cadem.cl/wp-content/uploads/2026/05/Track-PP-653-Mayo-S2-M2-VF.pdf
-44,10-05-2026,07-05-2026,07-05-2026,José Antonio Kast,Criteria,Agenda Criteria,36,51,13,1000,,,,,online,10 de Mayo 2026,0,https://www.criteria.cl/site/wp-content/uploads/2026/05/Agenda_Criteria_10_Mayo_2026_6HvRc.pdf
-45,08-05-2026,05-05-2026,06-05-2026,José Antonio Kast,Black & White,B&W,33,53,14,961,,,,,online,Mundial FIFA 2026 y Actualidad,0,https://www.blackwhite.global/_files/ugd/4e2a69_dbc5ef0fc8774caebe895ac0b7e07105.pdf
+44,08-05-2026,05-05-2026,06-05-2026,José Antonio Kast,Black & White,B&W,33,53,14,961,,,,,online,Mundial FIFA 2026 y Actualidad,0,https://www.blackwhite.global/_files/ugd/4e2a69_dbc5ef0fc8774caebe895ac0b7e07105.pdf
+45,10-05-2026,07-05-2026,07-05-2026,José Antonio Kast,Criteria,Agenda Criteria,36,51,13,1000,,,,,online,10 de Mayo 2026,0,https://www.criteria.cl/site/wp-content/uploads/2026/05/Agenda_Criteria_10_Mayo_2026_6HvRc.pdf
 46,13-05-2026,13-05-2026,13-05-2026,José Antonio Kast,Cadem,Plaza Pública,40,55,5,1153,,,,,online,654,0,https://cadem.cl/wp-content/uploads/2026/05/Track-PP-654-Mayo-S3-M1-VF.pdf
 48,13-05-2026,12-05-2026,13-05-2026,José Antonio Kast,Black & White,B&W,34,55,11,1046,,,,,online,Evaluación Oposición y Actualidad,0,https://www.blackwhite.global/_files/ugd/4e2a69_f50858a9e0df48689cc16505bffcf70b.pdf
 47,15-05-2026,15-05-2026,15-05-2026,José Antonio Kast,Cadem,Plaza Pública,36,58,6,1007,,,,,online,655,0,https://cadem.cl/wp-content/uploads/2026/05/Track-PP-655-Mayo-S3-M2-VF.pdf
 49,17-05-2026,14-05-2026,14-05-2026,José Antonio Kast,Criteria,Agenda Criteria,38,53,9,1002,,,,,online,17 de Mayo 2026,0,https://www.criteria.cl/site/wp-content/uploads/2026/05/Agenda_Criteria_17_Mayo_2026_5M3vh.pdf
-50,17-05-2026,13-05-2026,15-05-2026,José Antonio Kast,Activa Research,Pulso Ciudadano,31.2,54.4,14.4,1034,,,,,online,Mayo Q1 2026,0,https://chile.activasite.com/wp-content/uploads/2026/05/261571_PULSO_CIUDADANO_MAYO_Q1_0515_V2.pdf
+50,17-05-2026,13-05-2026,15-05-2026,José Antonio Kast,Activa Research,Pulso Ciudadano,31.2,54.4,14.4,1034,,,,,online,121 - Mayo Q1 2026,0,https://chile.activasite.com/wp-content/uploads/2026/05/261571_PULSO_CIUDADANO_MAYO_Q1_0515_V2.pdf
 51,17-05-2026,13-05-2026,17-05-2026,José Antonio Kast,TuInfluyes.com,DataInfluye,26,54,20,1146,,,,,online,Mayo 2026,0,https://www.paneltuinfluyes.com/e/mayo-2026?
 52,20-05-2026,19-05-2026,20-05-2026,José Antonio Kast,Black & White,B&W,32,54,13,1064,,,,,online,Temas Prioritarios y Actualidad,0,https://www.blackwhite.global/_files/ugd/4e2a69_7a36a2e8659f4c2f8ab72588243b95c2.pdf
 53,20-05-2026,20-05-2026,20-05-2026,José Antonio Kast,Cadem,Plaza Pública,40,56,4,1006,,,,,online,656,0,https://cadem.cl/wp-content/uploads/2026/05/Track-PP-656-Mayo-S4-M1-VF.pdf
 54,20-05-2026,20-05-2026,20-05-2026,José Antonio Kast,Panel Ciudadano-UDD,Panel Ciudadano,35,53,12,1024,,,,,online,20 de Mayo 2026,0,https://panelciudadano.cl/wp-content/uploads/2026/05/PanelCiudadanoUDD_Cambio-gabinete-20mayo_2.pdf
-55,21-05-2026,21-05-2026,21-05-2026,José Antonio Kast,Criteria,Agenda Criteria,37,49,14,1002,,,,,online,24 de Mayo 2026,0,https://www.criteria.cl/site/wp-content/uploads/2026/05/Agenda_Criteria_24_Mayo_2026_5M4bN.pdf
+55,24-05-2026,21-05-2026,21-05-2026,José Antonio Kast,Criteria,Agenda Criteria,37,49,14,1002,,,,,online,24 de Mayo 2026,0,https://www.criteria.cl/site/wp-content/uploads/2026/05/Agenda_Criteria_24_Mayo_2026_5M4bN.pdf
 56,22-05-2026,22-05-2026,22-05-2026,José Antonio Kast,Cadem,Plaza Pública,41,55,4,1013,,,,,online,657,0,https://cadem.cl/wp-content/uploads/2026/05/Track-PP-657-Mayo-S4-M2-VF.pdf
 57,27-05-2026,27-05-2026,27-05-2026,José Antonio Kast,Cadem,Plaza Pública,39,56,5,1002,,,,,online,658,0,https://cadem.cl/wp-content/uploads/2026/05/Track-PP-658-Mayo-S5-M1-VF.pdf
 58,29-05-2026,29-05-2026,29-05-2026,José Antonio Kast,Cadem,Plaza Pública,38,58,4,1001,,,,,online,659,0,https://cadem.cl/wp-content/uploads/2026/05/Track-PP-659-Mayo-S5-M2-VF.pdf
-59,28-05-2026,28-05-2026,28-05-2026,José Antonio Kast,Criteria,Agenda Criteria,36,53,11,802,,,,,online,31 de Mayo 2026,0,https://www.criteria.cl/site/wp-content/uploads/2026/05/Agenda_Criteria_31_Mayo_2026_5M5eP.pdf
-60,29-05-2026,27-05-2026,29-05-2026,José Antonio Kast,Activa Research,Pulso Ciudadano,31.0,53.3,15.7,1082,,,,,online,,0,https://chile.activasite.com/wp-content/uploads/2026/06/260982_PULSO_CIUDADANO_MAYO_Q2_0531_V2.pdf
+59,31-05-2026,28-05-2026,28-05-2026,José Antonio Kast,Criteria,Agenda Criteria,36,53,11,802,,,,,online,31 de Mayo 2026,0,https://www.criteria.cl/site/wp-content/uploads/2026/05/Agenda_Criteria_31_Mayo_2026_5M5eP.pdf
+60,29-05-2026,27-05-2026,29-05-2026,José Antonio Kast,Activa Research,Pulso Ciudadano,31.0,53.3,15.7,1082,,,,,online,122 - Mayo Q2 2026,0,https://chile.activasite.com/wp-content/uploads/2026/06/260982_PULSO_CIUDADANO_MAYO_Q2_0531_V2.pdf
 61,02-06-2026,02-06-2026,02-06-2026,José Antonio Kast,Cadem,Plaza Pública,41,55,4,1000,,,,,online,660,0,https://cadem.cl/wp-content/uploads/2026/06/Track-PP-660-Junio-S1-M1-VF.pdf
 62,04-06-2026,04-06-2026,04-06-2026,José Antonio Kast,Cadem,Plaza Pública,43,50,7,1090,,,,,online,661,0,https://cadem.cl/wp-content/uploads/2026/06/Track-PP-661-Junio-S1-M2-VF.pdf
-63,04-06-2026,04-06-2026,04-06-2026,José Antonio Kast,Criteria,Agenda Criteria,40,47,13,802,,,,,online,,0,https://www.criteria.cl/site/wp-content/uploads/2026/06/Agenda_Criteria_07_Junio_2026_6K9vC.pdf
+63,07-06-2026,04-06-2026,04-06-2026,José Antonio Kast,Criteria,Agenda Criteria,40,47,13,802,,,,,online,,0,https://www.criteria.cl/site/wp-content/uploads/2026/06/Agenda_Criteria_07_Junio_2026_6K9vC.pdf
 64,27-05-2026,18-04-2026,27-05-2026,José Antonio Kast,CEP,,34,52,5,1469,,,,,offline,Encuesta CEP 96,0,https://static.cepchile.cl/uploads/cepchile/2026/06/10-141614_atf6_Encuesta-CEP-96_con-anexos.pdf
 65,10-06-2026,10-06-2026,10-06-2026,José Antonio Kast,Cadem,Plaza Pública,41,53,6,1008,,,,,online,662,0,https://cadem.cl/wp-content/uploads/2026/06/Track-PP-662-Junio-S2-M1-VF.pdf
-66,12-06-2026,10-06-2026,12-06-2026,José Antonio Kast,Activa Research,Pulso Ciudadano,30.5,56.7,12.8,1036,,,,,online,,0,https://chile.activasite.com/wp-content/uploads/2026/06/261666_PULSO_CIUDADANO_JUNIO_Q1_0614_V1.pdf
-67,12-06-2026,12-06-2026,12-06-2026,José Antonio Kast,Cadem,Plaza Pública,40,54,6,1005,,,,,online,,0,https://cadem.cl/wp-content/uploads/2026/06/Track-PP-663-Junio-S2-M2-VF.pdf
+66,12-06-2026,10-06-2026,12-06-2026,José Antonio Kast,Activa Research,Pulso Ciudadano,30.5,56.7,12.8,1036,,,,,online,123 - Junio Q1 2026,0,https://chile.activasite.com/wp-content/uploads/2026/06/261666_PULSO_CIUDADANO_JUNIO_Q1_0614_V1.pdf
+67,12-06-2026,12-06-2026,12-06-2026,José Antonio Kast,Cadem,Plaza Pública,40,54,6,1005,,,,,online,663,0,https://cadem.cl/wp-content/uploads/2026/06/Track-PP-663-Junio-S2-M2-VF.pdf
 68,14-06-2026,11-06-2026,11-06-2026,José Antonio Kast,Criteria,Agenda Criteria,39,52,9,802,,,,,online,14 de Junio 2026,0,https://www.criteria.cl/site/wp-content/uploads/2026/06/Agenda_Criteria_14_Junio_2026_6LVnZ.pdf
 69,18-06-2026,18-06-2026,18-06-2026,José Antonio Kast,Cadem,Plaza Pública,44,52,4,1004,,,,,online,664,0,https://cadem.cl/wp-content/uploads/2026/06/Track-PP-664-Junio-S3-M1-VF.pdf
 70,19-06-2026,19-06-2026,19-06-2026,José Antonio Kast,Cadem,Plaza Pública,44,53,3,1006,,,,,online,665,0,https://cadem.cl/wp-content/uploads/2026/06/Track-PP-665-Junio-S3-M2-VF.pdf
 71,21-06-2026,18-06-2026,18-06-2026,José Antonio Kast,Criteria,Agenda Criteria,39,51,10,802,,,,,online,21 de Junio 2026,0,https://www.criteria.cl/site/wp-content/uploads/2026/06/Agenda_Criteria_21_Junio_2026_6Mb3r.pdf
 72,24-06-2026,24-06-2026,24-06-2026,José Antonio Kast,Cadem,Plaza Pública,41,55,4,1000,,,,,online,666,0,https://cadem.cl/wp-content/uploads/2026/06/Track-PP-666-Junio-S4-M1-VF.pdf
-73,25-06-2026,25-06-2026,25-06-2026,José Antonio Kast,Criteria,Agenda Criteria,39,51,10,802,,,,,online,28 de Junio 2026,0,https://www.criteria.cl/site/wp-content/uploads/2026/06/Agenda_Criteria_28_Junio_2026_6Lg4h.pdf
+73,28-06-2026,25-06-2026,25-06-2026,José Antonio Kast,Criteria,Agenda Criteria,39,51,10,802,,,,,online,28 de Junio 2026,0,https://www.criteria.cl/site/wp-content/uploads/2026/06/Agenda_Criteria_28_Junio_2026_6Lg4h.pdf
 74,26-06-2026,26-06-2026,26-06-2026,José Antonio Kast,Cadem,Plaza Pública,41,53,6,1001,,,,,online,667,0,https://cadem.cl/wp-content/uploads/2026/06/Track-PP-667-Junio-S4-M2-VF.pdf
-75,26-06-2026,24-06-2026,26-06-2026,José Antonio Kast,Activa Research,Pulso Ciudadano,30.1,56.9,13,1011,,,,,online,,0,https://chile.activasite.com/wp-content/uploads/2026/06/260983_PULSO_CIUDADANO_JUNIO_Q2_2026_V1.pdf
-76,22-06-2026,18-06-2026,22-06-2026,José Antonio Kast,TuInfluyes.com,DataInfluye,30,58,,1026,,,,,online,,0,
+75,26-06-2026,24-06-2026,26-06-2026,José Antonio Kast,Activa Research,Pulso Ciudadano,30.1,56.9,13,1011,23.6,59.1,17.2,,online,124 - Junio Q2 2026,0,https://chile.activasite.com/wp-content/uploads/2026/06/260983_PULSO_CIUDADANO_JUNIO_Q2_2026_V1.pdf
+76,22-06-2026,18-06-2026,22-06-2026,José Antonio Kast,TuInfluyes.com,DataInfluye,30,58,12,1026,,,,,online,Junio 2026,0,https://www.paneltuinfluyes.com/e/junio-2026?
 77,01-07-2026,01-07-2026,01-07-2026,José Antonio Kast,Cadem,Plaza Pública,38,58,4,1009,,,,,online,668,0,https://cadem.cl/wp-content/uploads/2026/07/Track-PP-668-Julio-S1-M1-VF.pdf
 78,03-07-2026,03-07-2026,03-07-2026,José Antonio Kast,Cadem,Plaza Pública,37,60,3,1002,,,,,online,669,0,https://cadem.cl/wp-content/uploads/2026/07/Track-PP-669-Julio-S1-M2-VF.pdf
 79,05-07-2026,02-07-2026,02-07-2026,José Antonio Kast,Criteria,Agenda Criteria,35,53,12,900,,,,,online,5 de Julio 2026,0,https://www.criteria.cl/site/wp-content/uploads/2026/07/Agenda_Criteria_5_Julio_2026_7by3L.pdf

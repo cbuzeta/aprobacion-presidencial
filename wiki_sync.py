@@ -179,8 +179,7 @@ def _parse_row(cells: list[str]) -> dict | None:
 
     # Column 0: pollster name + source URL
     raw0 = cells[0]
-    name = re.sub(r"<ref[^>]*/?>.*?</ref>", "", raw0[1:], flags=re.DOTALL)
-    name = re.sub(r"<ref[^>]*/>", "", name).strip()   # self-closing back-references
+    name = _cell_value(raw0)   # strips bgcolor/style prefix, refs, markup, wikilinks
     url  = _extract_url(raw0)
 
     info = POLLSTERS.get(name)

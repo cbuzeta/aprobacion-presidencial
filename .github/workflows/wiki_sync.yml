@@ -26,4 +26,5 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/aprobacion_presidencial.csv data/.wiki_state.json
           git diff --cached --quiet || git commit -m "Auto-sync: add new rows from Wikipedia ($(date +%Y-%m-%d))"
+          git pull --rebase origin main
           git push

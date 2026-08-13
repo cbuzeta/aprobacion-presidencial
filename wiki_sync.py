@@ -188,7 +188,12 @@ def _parse_row(cells: list[str]) -> dict | None:
         info = {"encuestadora": name, "producto": "", "modalidad": "online", "excluir": 0}
 
     # Column 1: fieldwork date(s)
-    fecha_ini, fecha_fin = _parse_date(_cell_value(cells[1]))
+    raw_date = _cell_value(cells[1])
+    fecha_ini, fecha_fin = _parse_date(raw_date)
+    if not fecha_ini or not fecha_fin:
+        print(f"  ⚠  Unparseable date '{raw_date}' for '{name}' — skipping row "
+              f"(add a case to _parse_date instead of importing it blank)")
+        return None
 
     # Column 2: sample size (strip Spanish thousands separator)
     n = _cell_value(cells[2]).replace(".", "").replace(",", "")
@@ -310,6 +315,7 @@ def main() -> None:
     new_rows      = [r for r in wiki_rows
                      if _key(r) not in existing_keys
                      and _key(r) not in KNOWN_FALSE_POSITIVES]
+    new_rows.reverse()  # wiki_rows is newest-first; IDs must increase with recency
 
     if not new_rows:
         print("CSV is already up to date — no new rows to add.")

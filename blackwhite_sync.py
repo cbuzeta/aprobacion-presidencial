@@ -87,10 +87,15 @@ def fetch_listing() -> list[tuple[str, str]]:
 
 # ── PDF helpers ───────────────────────────────────────────────────────────────
 
-def download(url: str, dest: Path, retries: int = 4) -> None:
-    """GET url to dest, retrying with backoff on blackwhite.global's 429s."""
+def download(url: str, dest: Path, retries: int = 5) -> None:
+    """GET url to dest, retrying with backoff on blackwhite.global's 429s.
+
+    The 429 window observed on this endpoint outlasts a naive ~1min backoff
+    (a live run needed >5min before a retry succeeded), so this escalates
+    much further — acceptable since this only ever runs unattended on a
+    schedule, never blocking a human."""
     req = urllib.request.Request(url, headers={"User-Agent": UA})
-    delay = 20
+    delay = 60
     for attempt in range(retries + 1):
         try:
             with urllib.request.urlopen(req, timeout=30) as r, open(dest, "wb") as f:
@@ -254,7 +259,14 @@ def append_rows(rows: list[dict], next_id: int) -> None:
 
 # ── main ──────────────────────────────────────────────────────────────────────
 
-def process_report(title: str, url: str) -> dict | None:
+def _key(fecha_inicio_campo: str, aprueba_pct: int) -> tuple:
+    """Dedup key independent of source URL: the same poll is sometimes
+    mirrored under a different URL (e.g. an Emol re-post of a B&W report),
+    so URL-only dedup can miss it."""
+    return ("Black & White", fecha_inicio_campo, aprueba_pct)
+
+
+def process_report(title: str, url: str, existing_keys: set) -> dict | None:
     with tempfile.TemporaryDirectory() as tmp:
         tmp = Path(tmp)
         pdf_path = tmp / "report.pdf"
@@ -268,6 +280,11 @@ def process_report(title: str, url: str) -> dict | None:
         parsed = parse_report(pages)
         if parsed is None:
             print(f"  ⚠  Could not parse methodology/approval slide for '{title}' — skipping")
+            return None
+
+        key = _key(parsed["fecha_inicio_campo"], parsed["aprueba_text"])
+        if key in existing_keys:
+            print(f"  Already in the CSV under a different URL (same fecha/aprueba%) — skipping")
             return None
 
         try:
@@ -326,6 +343,10 @@ def main() -> None:
 
     existing = load_csv()
     known_urls = {r["url_fuente"] for r in existing}
+    existing_keys = {
+        _key(r["fecha_inicio_campo"], int(float(r["aprueba_pct"])))
+        for r in existing if r["encuestadora"] == "Black & White" and r["aprueba_pct"]
+    }
     new_cards = [(t, u) for t, u in cards if u not in known_urls]
     new_cards.reverse()  # listing is newest-first; IDs must increase with recency
 
@@ -340,14 +361,17 @@ def main() -> None:
     rows = []
     for i, (title, url) in enumerate(new_cards):
         if i > 0:
-            time.sleep(20)  # space out requests to blackwhite.global
+            print("\n… waiting 3 min before the next report, to stay under "
+                  "blackwhite.global's download rate limit")
+            time.sleep(180)
         print(f"\n- {title}")
-        row = process_report(title, url)
+        row = process_report(title, url, existing_keys)
         if row is None:
             continue
         print(f"  [{next_id + len(rows):>3}] {row['fecha_fin_campo']}  n={row['n_muestra']:<6} "
               f"{row['aprueba_pct']}% / {row['desaprueba_pct']}% / {row['nr_pct']}%")
         rows.append(row)
+        existing_keys.add(_key(row["fecha_inicio_campo"], row["aprueba_pct"]))
 
     if not rows:
         print("\nNo rows could be verified automatically this run.")

@@ -136,3 +136,20 @@ Instalar la extensión Live Server → clic derecho en `index.html` → «Open w
 - **Meta-análisis:** las estimaciones retrospectivas usan meta-análisis de efectos aleatorios (DerSimonian-Laird, escala de Fisher arcsin√p). La heterogeneidad entre encuestadoras queda absorbida en τ² y no se modela explícitamente como efecto de casa.
 - **Tendencia LOESS:** regresión local lineal ponderada (grado 1, kernel tri-cúbico, bw = 35%); el n por medición entra como peso. No existe un «n efectivo» único que caracterice la tendencia.
 - **Escala temporal:** el eje x usa la fecha fin de campo como fecha de referencia de cada medición.
+
+## Historial de versiones
+
+El número de versión se muestra junto al logo en el dashboard y corresponde a un [tag de git](https://github.com/cbuzeta/aprobacion-presidencial/tags) sobre el commit correspondiente.
+
+| Versión | Descripción |
+|---|---|
+| v1.0 | Versión inicial del dashboard. |
+| v1.1 | Filtros dinámicos por encuestadora y rango de fechas. |
+| v1.2 | Mejora de los estimadores LOESS y meta-análisis; URLs de fuente clickeables y tabla de fuentes colapsable. |
+| v1.3 | Serie NS/NR, filtro de series y dropdown de encuestadora; columnas de aprobación de gobierno. |
+| v1.4 | Branding Metaseñal y limpieza del header. |
+| v1.5 | Secciones colapsables (Nota metodológica, Fuentes de datos); tarjetas de estadísticas reencuadradas como retrospectivas/prospectivas. |
+| v1.6 | `wiki_sync.py`: primera sincronización automática de datos desde Wikipedia. |
+| v1.7 | Rebrand a MetaAprobación; sincronización diaria movida a GitHub Actions. |
+| v1.8 | Corrección del intervalo de confianza al 95% y exportación a PNG. |
+| v1.9 | Corrección de bugs de pérdida de datos en `wiki_sync.py`; nuevo `blackwhite_sync.py` (sincronización por OCR desde blackwhite.global); auditoría completa del CSV (id duplicado, fila de CEP mal parseada, `n_informe` incompletos, orden cronológico); corrección de redondeo en el tooltip «Neto». |

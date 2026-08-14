@@ -1,0 +1,33 @@
+name: Black & White Sync
+
+on:
+  schedule:
+    - cron: '0 13 * * *'  # daily at 13:00 UTC, an hour after Wiki Sync
+  workflow_dispatch:      # allow manual triggering from GitHub UI
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install poppler and tesseract
+        run: sudo apt-get update && sudo apt-get install -y poppler-utils tesseract-ocr
+
+      - name: Run Black & White sync
+        run: python blackwhite_sync.py
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/aprobacion_presidencial.csv
+          git diff --cached --quiet || git commit -m "Auto-sync: add new Black & White report(s) ($(date +%Y-%m-%d))"
+          git pull --rebase origin main
+          git push

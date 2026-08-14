@@ -32,6 +32,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -86,11 +87,22 @@ def fetch_listing() -> list[tuple[str, str]]:
 
 # ── PDF helpers ───────────────────────────────────────────────────────────────
 
-def download(url: str, dest: Path) -> None:
-    time.sleep(20)  # be polite to blackwhite.global's per-IP rate limiting
+def download(url: str, dest: Path, retries: int = 4) -> None:
+    """GET url to dest, retrying with backoff on blackwhite.global's 429s."""
     req = urllib.request.Request(url, headers={"User-Agent": UA})
-    with urllib.request.urlopen(req, timeout=30) as r, open(dest, "wb") as f:
-        f.write(r.read())
+    delay = 20
+    for attempt in range(retries + 1):
+        try:
+            with urllib.request.urlopen(req, timeout=30) as r, open(dest, "wb") as f:
+                f.write(r.read())
+            return
+        except urllib.error.HTTPError as e:
+            if e.code != 429 or attempt == retries:
+                raise
+            print(f"  … 429 from server, waiting {delay}s before retry "
+                  f"({attempt + 1}/{retries})")
+            time.sleep(delay)
+            delay *= 2
 
 
 def pdf_pages_text(pdf_path: Path) -> list[str]:
@@ -326,7 +338,9 @@ def main() -> None:
     print(f"\n{prefix}Checking {len(new_cards)} new report(s):")
 
     rows = []
-    for title, url in new_cards:
+    for i, (title, url) in enumerate(new_cards):
+        if i > 0:
+            time.sleep(20)  # space out requests to blackwhite.global
         print(f"\n- {title}")
         row = process_report(title, url)
         if row is None:

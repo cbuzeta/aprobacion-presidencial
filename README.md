@@ -137,6 +137,14 @@ Instalar la extensión Live Server → clic derecho en `index.html` → «Open w
 - **Tendencia LOESS:** regresión local lineal ponderada (grado 1, kernel tri-cúbico, bw = 35%); el n por medición entra como peso. No existe un «n efectivo» único que caracterice la tendencia.
 - **Escala temporal:** el eje x usa la fecha fin de campo como fecha de referencia de cada medición.
 
+## Agradecimientos
+
+Este proyecto se ha beneficiado de los comentarios y la retroalimentación de:
+
+- **Rodrigo Uribe** (Universidad de Chile)
+- **Paulina Valenzuela** (Datavoz)
+- **Alejandra Ojeda** (IPSOS)
+
 ## Historial de versiones
 
 El número de versión se muestra junto al logo en el dashboard y corresponde a un [tag de git](https://github.com/cbuzeta/aprobacion-presidencial/tags) sobre el commit correspondiente.

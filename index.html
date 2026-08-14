@@ -1058,7 +1058,7 @@ function createChart(datasets, xMin, xMax, yMin, yMax) {
               ? `<div class="tooltip-row"><span>NS / NR</span><span class="tooltip-val">${raw.y}%</span></div>`
               : `<div class="tooltip-row"><span>${isA ? 'Aprobación' : 'Desaprobación'}</span><span class="tooltip-val">${raw.y}%</span></div>
             <div class="tooltip-row"><span>NS / NR</span><span class="tooltip-val">${d.nr}%</span></div>
-            <div class="tooltip-row"><span>Neto</span><span class="tooltip-val" style="color:${d.neto >= 0 ? '#185FA5' : '#993C1D'}">${sign(d.neto)}pp</span></div>`}
+            <div class="tooltip-row"><span>Neto</span><span class="tooltip-val" style="color:${d.neto >= 0 ? '#185FA5' : '#993C1D'}">${sign(d.neto.toFixed(1))}pp</span></div>`}
             <div class="tooltip-row"><span>n muestra</span><span class="tooltip-val">${cache.nStr}</span></div>
             ${d.url ? '<div class="tooltip-url">Clic para abrir fuente ↗</div>' : ''}
           `;

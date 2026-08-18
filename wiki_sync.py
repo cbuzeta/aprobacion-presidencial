@@ -54,8 +54,9 @@ POLLSTERS: dict[str, dict] = {
     "Activa":          {"encuestadora": "Activa Research",     "producto": "Pulso Ciudadano",   "modalidad": "online", "excluir": 0},
     "Panel Ciudadano": {"encuestadora": "Panel Ciudadano-UDD", "producto": "Panel Ciudadano",   "modalidad": "online", "excluir": 0},
     "Data Influye":    {"encuestadora": "TuInfluyes.com",      "producto": "DataInfluye",       "modalidad": "online", "excluir": 0},
-    "Black & White":   {"encuestadora": "Black & White",       "producto": "Black & White",     "modalidad": "online", "excluir": 0},
-    "AtlasIntel":      {"encuestadora": "AtlasIntel",          "producto": "Latam Pulse Chile", "modalidad": "online", "excluir": 1},
+    "Black & White":   {"encuestadora": "Black & White",       "producto": "Black & White",     "modalidad": "online",  "excluir": 0},
+    "AtlasIntel":      {"encuestadora": "AtlasIntel",          "producto": "Latam Pulse Chile", "modalidad": "online",  "excluir": 1},
+    "CEP":             {"encuestadora": "CEP",                 "producto": "Encuesta CEP",      "modalidad": "offline", "excluir": 0},
 }
 
 # Rows that exist on Wikipedia but must never be imported.
@@ -197,6 +198,8 @@ def _parse_row(cells: list[str]) -> dict | None:
 
     # Column 2: sample size (strip Spanish thousands separator)
     n = _cell_value(cells[2]).replace(".", "").replace(",", "")
+    if n in ("—", "-"):
+        n = ""
 
     # Columns 3, 4, 6: approval %, disapproval %, NS/NR %
     def pct(line: str) -> str:

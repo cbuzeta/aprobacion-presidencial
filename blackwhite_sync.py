@@ -171,11 +171,22 @@ def parse_report(pages: list[str]) -> dict | None:
     full_text = "\n".join(pages)
 
     n_match = re.search(r"realizaron\s+([\d.,]+)\s+encuestas", full_text)
-    campo_match = re.search(r"Trabajo de campo\s*\n\s*([^\n]+)", full_text)
-    if not n_match or not campo_match:
+    campo_idx = full_text.find("Trabajo de campo")
+    if not n_match or campo_idx == -1:
         return None
     n_muestra = n_match.group(1).replace(".", "").replace(",", "")
-    fecha_inicio, fecha_fin = parse_field_dates(campo_match.group(1).strip())
+
+    # The "Trabajo de campo" column header sits next to "Error muestral" in the
+    # source layout; depending on the PDF's text-extraction order, the line(s)
+    # right after it may be the error-muestral paragraph rather than the date.
+    # Scan forward for the first line that actually parses as a date instead of
+    # assuming it's immediately adjacent.
+    fecha_inicio = fecha_fin = ""
+    window = full_text[campo_idx + len("Trabajo de campo"):campo_idx + 400]
+    for line in window.splitlines():
+        fecha_inicio, fecha_fin = parse_field_dates(line.strip())
+        if fecha_inicio:
+            break
     if not fecha_inicio or not fecha_fin:
         return None
 
@@ -205,6 +216,14 @@ def parse_report(pages: list[str]) -> dict | None:
 def parse_field_dates(s: str) -> tuple[str, str]:
     """'13 de julio 2026' or a range -> (DD-MM-YYYY, DD-MM-YYYY)."""
     s = s.strip().replace("–", "-").replace("—", "-")
+    s = re.sub(r"\s*\([^)]*\)\s*$", "", s)  # strip trailing annotations, e.g. "(antes de ...)"
+    s = s.rstrip(".")
+
+    m = re.match(r"[Ee]ntre\s+el\s+(\d+)\s+de\s+(\w+)\s+y\s+el\s+(\d+)\s+de\s+(\w+)\s+de\s+(\d{4})", s)
+    if m:
+        d1, mo1, d2, mo2, yr = m.groups()
+        return (f"{d1.zfill(2)}-{MONTH_ES.get(mo1.lower(),'??')}-{yr}",
+                f"{d2.zfill(2)}-{MONTH_ES.get(mo2.lower(),'??')}-{yr}")
 
     m = re.match(r"(\d+)\s+de\s+(\w+)\s*-\s*(\d+)\s+de\s+(\w+)\s+de\s+(\d{4})", s)
     if m:
@@ -213,6 +232,13 @@ def parse_field_dates(s: str) -> tuple[str, str]:
                 f"{d2.zfill(2)}-{MONTH_ES.get(mo2.lower(),'??')}-{yr}")
 
     m = re.match(r"(\d+)\s*-\s*(\d+)\s+de\s+(\w+)\s+de\s+(\d{4})", s)
+    if m:
+        d1, d2, mo, yr = m.groups()
+        mo_n = MONTH_ES.get(mo.lower(), "??")
+        return f"{d1.zfill(2)}-{mo_n}-{yr}", f"{d2.zfill(2)}-{mo_n}-{yr}"
+
+    # "07 y 08 de julio 2026" — two days, same month, no "de" before the year
+    m = re.match(r"(\d+)\s+y\s+(\d+)\s+de\s+(\w+)\s+(\d{4})", s)
     if m:
         d1, d2, mo, yr = m.groups()
         mo_n = MONTH_ES.get(mo.lower(), "??")

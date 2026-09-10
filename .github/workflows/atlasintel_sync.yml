@@ -1,0 +1,43 @@
+name: AtlasIntel Sync
+
+on:
+  schedule:
+    - cron: '0 14 10 * *'  # 14:00 UTC on the 10th of every month (second week)
+  workflow_dispatch:       # allow manual triggering from GitHub UI
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install poppler, tesseract and Pillow
+        run: |
+          sudo apt-get update && sudo apt-get install -y poppler-utils tesseract-ocr
+          pip install Pillow
+
+      - name: Run AtlasIntel sync
+        id: sync
+        run: python atlasintel_sync.py
+
+      - name: Commit and push if changed
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/aprobacion_presidencial.csv
+          git diff --cached --quiet || git commit -m "Auto-sync: add new AtlasIntel report(s) ($(date +%Y-%m-%d))"
+          git pull --rebase origin main
+          git push
+
+      - name: Fail the run if any report needs manual entry
+        if: always() && steps.sync.outcome == 'failure'
+        run: |
+          echo "One or more AtlasIntel reports could not be auto-verified — see the 'Run AtlasIntel sync' step log above for which, and why."
+          exit 1

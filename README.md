@@ -9,6 +9,7 @@ aprobacion-presidencial/
 ├── index.html                        # Dashboard principal
 ├── wiki_sync.py                      # Sincronización automática desde Wikipedia
 ├── blackwhite_sync.py                # Sincronización automática desde blackwhite.global
+├── atlasintel_sync.py                # Sincronización automática desde atlasintel.org
 ├── data/
 │   ├── aprobacion_presidencial.csv   # Base de datos maestra
 │   ├── encuestadoras.csv             # Catálogo de encuestadoras
@@ -16,7 +17,8 @@ aprobacion-presidencial/
 ├── .github/
 │   └── workflows/
 │       ├── wiki_sync.yml             # Acción diaria de sincronización (Wikipedia)
-│       └── blackwhite_sync.yml       # Acción diaria de sincronización (Black & White)
+│       ├── blackwhite_sync.yml       # Acción diaria de sincronización (Black & White)
+│       └── atlasintel_sync.yml       # Acción mensual de sincronización (AtlasIntel)
 ├── logo.svg
 ├── logotype.svg
 └── README.md
@@ -77,9 +79,9 @@ python wiki_sync.py --dry-run  # previsualizar sin escribir nada
 
 El script requiere solo la biblioteca estándar de Python (sin dependencias externas).
 
-**Seguimiento manual tras cada sincronización:** el script deja en blanco `n_informe` y usa la fecha fin de campo como proxy de `fecha_informe`; ambos campos pueden requerir corrección manual.
+**`n_informe` y `fecha_informe` se derivan automáticamente** a partir de la propia cita de Wikipedia (número de seguimiento de Cadem, fecha de publicación de Criteria/CEP/Activa, código de mes de TuInfluyes, etc.), con un resguardo ante fechas de citación inverosímiles (anteriores al fin del trabajo de campo, o más de 30 días después) por si la cita en Wikipedia tiene un error de tipeo. Cuando una fila no queda respaldada por el informe propio de la encuestadora (por ejemplo, una encuesta mencionada solo en un artículo periodístico), se usa un `n_informe` del tipo «Citado en \<sitio\> (\<fecha\>)» en vez de dejarlo en blanco. Si de todas formas algún `n_informe` queda vacío (una encuestadora o formato de cita nuevo que el script no reconoce), la Action termina en rojo para que no pase inadvertido.
 
-**Encuestadoras no cubiertas por Wikipedia:** Black & White casi nunca aparece en la tabla de Wikipedia (la última vez fue una medición publicada el 1 de mayo de 2026); se sincroniza aparte con `blackwhite_sync.py` (ver abajo).
+**Encuestadoras no cubiertas por Wikipedia:** Black & White casi nunca aparece en la tabla (la última vez fue una medición publicada el 1 de mayo de 2026) y AtlasIntel no tiene ninguna fila en la tabla actualmente; ambas se sincronizan aparte con `blackwhite_sync.py` y `atlasintel_sync.py` (ver abajo).
 
 **Falso positivo conocido:** la medición «después» del experimento pre-post de Panel Ciudadano (16 Abr 2026, 39%/49%, n=1030) siempre aparece como candidata; no debe incorporarse al CSV.
 
@@ -94,19 +96,31 @@ python blackwhite_sync.py --dry-run  # previsualizar sin escribir nada
 
 Requiere los binarios `tesseract` y `pdftotext`/`pdftoppm` (poppler) en el PATH; no tiene dependencias de Python fuera de la biblioteca estándar.
 
-### Rutina diaria automatizada
+### `atlasintel_sync.py`
 
-Dos workflows de GitHub Actions ejecutan cada sincronizador una vez al día y, si hay filas nuevas, hacen commit y push automáticamente:
+Recorre el listado de informes en https://atlasintel.org/polls/latam-pulse y agrega al CSV los "Latam Pulse: Chile" que falten (AtlasIntel publica uno al mes, típicamente dentro de los primeros ~8 días del mes siguiente). La página de metodología del PDF tiene capa de texto (tamaño muestral, fechas de campo), pero el gráfico de barras de aprobación/desaprobación/no sabe es una imagen sin capa de texto — esos tres valores se leen con OCR (`tesseract`), ubicando primero cada etiqueta ("Apruebo"/"Desapruebo"/"No sé") y luego recortando ajustadamente los píxeles casi negros debajo de cada una (para no confundir el propio color de la barra con texto). Se prueban varias combinaciones de escala/umbral/PSM hasta que los tres valores sumen 100% ±1pp; si ninguna cuadra, el informe queda pendiente de carga manual.
 
-- `wiki_sync.yml` — 12:00 UTC (~8am Santiago en invierno)
-- `blackwhite_sync.yml` — 13:00 UTC
+```bash
+python atlasintel_sync.py            # verificar y sincronizar informes nuevos
+python atlasintel_sync.py --dry-run  # previsualizar sin escribir nada
+```
+
+Requiere los binarios `tesseract` y `pdftotext`/`pdftoppm` (poppler), además del paquete Python `Pillow` (para el recorte/umbralado a nivel de píxel que la biblioteca estándar no puede hacer).
+
+### Rutina automatizada
+
+Tres workflows de GitHub Actions ejecutan cada sincronizador y, si hay filas nuevas, hacen commit y push automáticamente. Los tres terminan en rojo (sin dejar de hacer commit de lo que sí se pudo verificar) si algún informe encontrado no pudo verificarse automáticamente, para que una falla silenciosa no pase semanas sin notarse:
+
+- `wiki_sync.yml` — diario, 12:00 UTC (~8am Santiago en invierno)
+- `blackwhite_sync.yml` — diario, 13:00 UTC
+- `atlasintel_sync.yml` — mensual, día 10 (segunda semana) a las 14:00 UTC
 
 - **Ver ejecuciones:** https://github.com/cbuzeta/aprobacion-presidencial/actions
-- **Disparar manualmente:** GitHub → Actions → (Wiki Sync | Black & White Sync) → Run workflow (o `gh workflow run wiki_sync.yml` / `gh workflow run blackwhite_sync.yml`)
+- **Disparar manualmente:** GitHub → Actions → (Wiki Sync | Black & White Sync | AtlasIntel Sync) → Run workflow (o `gh workflow run wiki_sync.yml` / `gh workflow run blackwhite_sync.yml` / `gh workflow run atlasintel_sync.yml`)
 
 ## Cómo agregar mediciones manualmente
 
-Para filas que ninguno de los dos sincronizadores pudo verificar automáticamente (por ejemplo, un informe de Black & White marcado "OCR mismatch" o "checksum failed" en el log de la Action):
+Para filas que ningún sincronizador pudo verificar automáticamente (por ejemplo, un informe marcado "OCR mismatch" o "checksum failed" en el log de la Action):
 
 1. Revisar el PDF del informe (el log imprime la URL).
 2. Completar la fila a mano siguiendo el procedimiento de abajo.

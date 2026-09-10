@@ -56,7 +56,7 @@ POLLSTERS: dict[str, dict] = {
     "Panel Ciudadano": {"encuestadora": "Panel Ciudadano-UDD", "producto": "Panel Ciudadano",   "modalidad": "online", "excluir": 0},
     "Data Influye":    {"encuestadora": "TuInfluyes.com",      "producto": "DataInfluye",       "modalidad": "online", "excluir": 0},
     "Black & White":   {"encuestadora": "Black & White",       "producto": "Black & White",     "modalidad": "online",  "excluir": 0},
-    "AtlasIntel":      {"encuestadora": "AtlasIntel",          "producto": "Latam Pulse Chile", "modalidad": "online",  "excluir": 1},
+    "AtlasIntel":      {"encuestadora": "AtlasIntel",          "producto": "Latam Pulse Chile", "modalidad": "online",  "excluir": 0},
     "CEP":             {"encuestadora": "CEP",                 "producto": "Encuesta CEP",      "modalidad": "offline", "excluir": 0},
 }
 

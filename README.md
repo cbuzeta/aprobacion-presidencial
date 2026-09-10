@@ -58,7 +58,7 @@ Cada fila es una medición individual. Columnas:
 | Panel Ciudadano-UDD | Panel Ciudadano | Semanal | Online |
 | Activa Research | Pulso Ciudadano | Quincenal | Online |
 | TuInfluyes.com | DataInfluye | Mensual | Online |
-| AtlasIntel | Latam Pulse Chile | Mensual | Online (excluida) |
+| AtlasIntel | Latam Pulse Chile | Mensual | Online |
 
 ## Sincronización automática
 
@@ -79,7 +79,7 @@ El script requiere solo la biblioteca estándar de Python (sin dependencias exte
 
 **Seguimiento manual tras cada sincronización:** el script deja en blanco `n_informe` y usa la fecha fin de campo como proxy de `fecha_informe`; ambos campos pueden requerir corrección manual.
 
-**Encuestadoras no cubiertas por Wikipedia:** Black & White casi nunca aparece en la tabla de Wikipedia (la última vez fue una medición publicada el 1 de mayo de 2026); se sincroniza aparte con `blackwhite_sync.py` (ver abajo). AtlasIntel está marcada como `excluir = 1`.
+**Encuestadoras no cubiertas por Wikipedia:** Black & White casi nunca aparece en la tabla de Wikipedia (la última vez fue una medición publicada el 1 de mayo de 2026); se sincroniza aparte con `blackwhite_sync.py` (ver abajo).
 
 **Falso positivo conocido:** la medición «después» del experimento pre-post de Panel Ciudadano (16 Abr 2026, 39%/49%, n=1030) siempre aparece como candidata; no debe incorporarse al CSV.
 

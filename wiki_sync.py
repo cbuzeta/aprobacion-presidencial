@@ -166,6 +166,19 @@ def _get_citation(raw0: str, ref_index: dict) -> str:
     return m.group(1) if m else ""
 
 
+_CADEM_URL_RE = re.compile(r"^https://cadem\.cl/wp-content/uploads/(\d{4}/\d{2}/[^/]+\.pdf)$")
+
+
+def _stabilize_cadem_url(url: str) -> str:
+    """Cadem prunes old PDFs from cadem.cl/wp-content/uploads on a rolling
+    basis (confirmed: everything older than ~1 month 404s), which silently
+    breaks url_fuente for every past row. insight-chile.cl is Cadem's own
+    sister platform (insightchile@cadem.cl) and mirrors the exact same path
+    permanently, so rewrite to that instead of citing the fragile one."""
+    m = _CADEM_URL_RE.match(url)
+    return f"https://insight-chile.cl/storage/{m.group(1)}" if m else url
+
+
 def _citation_field(cita: str, field: str) -> str:
     m = re.search(rf"\|{field}=([^|}}]+)", cita)
     return m.group(1).strip() if m else ""
@@ -313,6 +326,7 @@ def _parse_row(cells: list[str], ref_index: dict | None = None) -> dict | None:
     # A row reusing an earlier citation (<ref name="X" />) has no inline
     # "url=" of its own — the url only lives in the citation it points to.
     url = _extract_url(raw0) or _extract_url(cita)
+    url = _stabilize_cadem_url(url)
 
     info = POLLSTERS.get(name)
     if info is None:

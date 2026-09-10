@@ -85,6 +85,8 @@ El script requiere solo la biblioteca estándar de Python (sin dependencias exte
 
 **Falso positivo conocido:** la medición «después» del experimento pre-post de Panel Ciudadano (16 Abr 2026, 39%/49%, n=1030) siempre aparece como candidata; no debe incorporarse al CSV.
 
+**Enlaces de Cadem:** Cadem elimina de `cadem.cl/wp-content/uploads` los PDF de más de ~1 mes (confirmado: todo lo anterior a agosto 2026 daba 404). El script reescribe automáticamente cualquier URL de `cadem.cl` a su equivalente en `insight-chile.cl` — plataforma hermana del propio Cadem (`insightchile@cadem.cl`), no un mirror de terceros — que replica la misma ruta de forma permanente.
+
 ### `blackwhite_sync.py`
 
 Recorre el listado de informes en https://www.blackwhite.global/s-projects-side-by-side y agrega al CSV los que falten. Los PDF de Black & White tienen capa de texto para el título, la fecha, el tamaño muestral y el % de aprobación (mencionado en el texto de la lámina "Aprobación del gobierno"), pero el % de desaprobación y de "no aprueba ni desaprueba" solo existen como gráfico — esos dos se leen con OCR (`tesseract`) y se descartan automáticamente si no cuadran (checksum ≠ 100 o el valor de aprobación del OCR no coincide con el del texto), quedando pendientes de carga manual.

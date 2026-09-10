@@ -2,6 +2,8 @@
 
 Dashboard web que reúne y visualiza las mediciones de aprobación presidencial en Chile. Combina un meta-análisis de efectos aleatorios (estimación retrospectiva del período seleccionado) con una tendencia LOESS (estimación prospectiva de la trayectoria reciente).
 
+Este README documenta cómo correr y mantener el dashboard. Para el dataset en sí mismo — codebook completo, metodología de construcción, cobertura, licencia y cómo citarlo — ver **[DATASET.md](DATASET.md)**.
+
 ## Estructura del proyecto
 
 ```

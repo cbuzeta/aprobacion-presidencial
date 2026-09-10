@@ -142,6 +142,30 @@
       color: #fff;
       border-color: var(--c);
     }
+    .pres-tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 1rem;
+    }
+    .pres-tab {
+      font-size: 12px;
+      font-weight: 500;
+      padding: 6px 14px;
+      border-radius: 99px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      color: var(--text2);
+      cursor: pointer;
+      line-height: 1.5;
+      transition: background 0.12s, color 0.12s, border-color 0.12s;
+      user-select: none;
+      font-family: inherit;
+    }
+    .pres-tab.active {
+      background: var(--blue-d);
+      color: #fff;
+      border-color: var(--blue-d);
+    }
     .filter-date {
       font-size: 11px;
       padding: 3px 7px;
@@ -328,13 +352,19 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       font-size="32" letter-spacing="-0.5">
       <tspan font-weight="300" fill="#999999">Meta</tspan><tspan font-weight="600" fill="#1a1a1a">Aprobación</tspan>
     </text>
-  </svg><span id="version-tag">v1.10</span>
+  </svg><span id="version-tag">v1.11</span>
   <p id="subtitle">Cargando datos…</p>
 </header>
 
 <div id="loading">Cargando datos…</div>
 
 <div id="dashboard" style="display:none">
+  <div class="pres-tabs" id="pres-tabs">
+    <button class="pres-tab active" data-pres="José Antonio Kast">Kast 2026–</button>
+    <button class="pres-tab" data-pres="Gabriel Boric">Boric 2022–2026</button>
+    <button class="pres-tab" data-pres="Sebastián Piñera">Piñera 2018–2022</button>
+  </div>
+
   <div class="filters" id="filters"></div>
 
   <div class="stat-grid" id="stats"></div>
@@ -408,12 +438,13 @@ let chartInstance = null;
 let liveData      = [];
 let liveCache     = [];
 let activeSeries  = new Set(['apro', 'desapro', 'nr']);
-let datasetLabel  = 'Aprobación Presidencial';
+let activePres    = 'José Antonio Kast';
 
 // ── Math helpers ──────────────────────────────────────────────────────────────
 const clamp01 = p => Math.min(0.999999, Math.max(0.000001, p));
 
 function fisherCI(pPct, n, z = 1.96) {
+  if (!n || n <= 0) return { lo: pPct, hi: pPct, se_eff: 0 };
   const p       = clamp01(pPct / 100);
   const theta   = Math.asin(Math.sqrt(p));
   const se      = 1 / Math.sqrt(4 * n);
@@ -430,7 +461,7 @@ function fisherCI(pPct, n, z = 1.96) {
 function metaPoolFisher(psPct, ns, z = 1.96) {
   const m     = psPct.length;
   const theta = psPct.map(p => Math.asin(Math.sqrt(clamp01(p / 100))));
-  const prec  = ns.map(ni => 4 * ni);
+  const prec  = ns.map(ni => 4 * Math.max(1, ni || 0));
 
   // Fixed-effects estimate for Cochran's Q
   let W = 0, wTheta = 0;
@@ -471,7 +502,7 @@ function fisherTrendWithCI(xs, psPct, ns, bw = 0.35, z = 1.96) {
   const lo    = new Array(n);
   const hi    = new Array(n);
   const theta = psPct.map(pct => Math.asin(Math.sqrt(clamp01(pct / 100))));
-  const prec  = ns.map(ni => 4 * ni);
+  const prec  = ns.map(ni => 4 * Math.max(1, ni || 0));
 
   for (let i = 0; i < n; i++) {
     const xi    = xs[i];
@@ -653,8 +684,9 @@ Papa.parse('./data/aprobacion_presidencial.csv', {
 
 // ── Filters ───────────────────────────────────────────────────────────────────
 function initFilters() {
-  const encuestadoras = [...new Set(ALL_DATA.map(d => d.encuestadora))].sort();
-  const dts   = ALL_DATA.map(d => d.dt);
+  const presData = ALL_DATA.filter(d => d.presidente === activePres);
+  const encuestadoras = [...new Set(presData.map(d => d.encuestadora))].sort();
+  const dts   = presData.map(d => d.dt);
   const minDt = new Date(Math.min(...dts));
   const maxDt = new Date(Math.max(...dts));
   const minDV = toDateVal(minDt);
@@ -725,6 +757,17 @@ document.addEventListener('click', e => {
   if (dd && !dd.contains(e.target)) dd.removeAttribute('open');
 });
 
+document.getElementById('pres-tabs').addEventListener('click', e => {
+  const btn = e.target.closest('.pres-tab');
+  if (!btn || btn.classList.contains('active')) return;
+  document.querySelectorAll('.pres-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  activePres   = btn.dataset.pres;
+  activeSeries = new Set(['apro', 'desapro', 'nr']);
+  initFilters();
+  applyFilters();
+});
+
 const SERIES_MATCH = {
   desapro: l => l.toLowerCase().includes('desaprobación'),
   apro:    l => l.toLowerCase().includes('aprobación'),
@@ -761,6 +804,7 @@ function getFilteredData() {
   const toDt   = toVal   ? parseDateISO(toVal)   : null;
 
   return ALL_DATA.filter(d =>
+    d.presidente === activePres &&
     activeEncs.has(d.encuestadora) &&
     (!fromDt || d.dt >= fromDt) &&
     (!toDt   || d.dt <= toDt)
@@ -797,7 +841,7 @@ function renderView(DATA) {
     return {
       fecha: fmt(d.dt),
       campo,
-      nStr:  d.n.toLocaleString('es-CL'),
+      nStr:  d.n > 0 ? d.n.toLocaleString('es-CL') : '—',
       ciA:   { lo: d.ci_a.lo.toFixed(1), hi: d.ci_a.hi.toFixed(1), se: d.ci_a.se_eff.toFixed(3) },
       ciD:   { lo: d.ci_d.lo.toFixed(1), hi: d.ci_d.hi.toFixed(1), se: d.ci_d.se_eff.toFixed(3) },
     };
@@ -831,10 +875,12 @@ function renderView(DATA) {
   const metaD      = metaPoolFisher(desapros, ns);
   const firstTrendA = ta.fit[0],               lastTrendA = ta.fit[ta.fit.length - 1];
   const firstTrendD = td.fit[0],               lastTrendD = td.fit[td.fit.length - 1];
-  const minN = Math.min(...ns), maxN = Math.max(...ns);
+  const nsKnown = ns.filter(n => n > 0);
+  const minN = nsKnown.length ? Math.min(...nsKnown) : null;
+  const maxN = nsKnown.length ? Math.max(...nsKnown) : null;
 
   els.subtitle.textContent =
-    `${datasetLabel} · ${DATA.length} mediciones · ${first.fecha} – ${last.fecha}`;
+    `${activePres} · ${DATA.length} mediciones · ${first.fecha} – ${last.fecha}`;
 
   els.stats.innerHTML = `
     <div class="stat-card">
@@ -893,7 +939,9 @@ function renderView(DATA) {
     `<div style="margin-top:0.75rem;line-height:1.6">` +
     `<strong>General.</strong> ` +
     `Datos: encuestas de opinión pública (múltiples mediciones), mayoritariamente provenientes de paneles en línea no probabilísticos. ` +
-    `Los tamaños de muestra reportados (n entre ${minN} y ${maxN} casos) no necesariamente reflejan observaciones independientes. ` +
+    (minN != null
+      ? `Los tamaños de muestra reportados (n entre ${minN} y ${maxN} casos) no necesariamente reflejan observaciones independientes. `
+      : `El tamaño de muestra no está disponible para ninguna medición del período seleccionado; los intervalos y ponderaciones usan un peso uniforme. `) +
     `Los IC se calculan mediante transformación estabilizadora de varianza de Fisher (arcsin√p).` +
     `<br><br>` +
     `<sup>†</sup> <strong>Sobre los IC 95%.</strong> ` +
@@ -1037,7 +1085,12 @@ function createChart(datasets, xMin, xMax, yMin, yMax) {
             ticks: {
               color: '#888', font: { size: 11 },
               maxRotation: 0, autoSkip: true, maxTicksLimit: 10,
-              callback: v => new Date(v).toLocaleDateString('es-CL', { day: 'numeric', month: 'short' }),
+              callback: function (v) {
+                const d = new Date(v);
+                return (this.max - this.min) > 400 * 86400000
+                  ? d.toLocaleDateString('es-CL', { month: 'short', year: '2-digit' })
+                  : d.toLocaleDateString('es-CL', { day: 'numeric', month: 'short' });
+              },
             },
           },
           y: {
@@ -1074,7 +1127,7 @@ function createChart(datasets, xMin, xMax, yMin, yMax) {
           els.chartWrap.style.cursor = d.url ? 'pointer' : 'default';
 
           tt.innerHTML = `
-            <div class="tooltip-title" style="color:${col}">${escHtml(d.encuestadora)} ${escHtml(d.producto)} · ${escHtml(String(d.inf))}</div>
+            <div class="tooltip-title" style="color:${col}">${escHtml(d.encuestadora)} ${escHtml(d.producto)}${d.inf != null && d.inf !== '' ? ` · ${escHtml(String(d.inf))}` : ''}</div>
             <div class="tooltip-row"><span>Trabajo de campo</span><span class="tooltip-val">${cache.campo}</span></div>
             <div class="tooltip-row"><span>Informe</span><span class="tooltip-val">${cache.fecha}</span></div>
             ${isNR

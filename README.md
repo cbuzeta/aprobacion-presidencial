@@ -14,6 +14,11 @@ aprobacion-presidencial/
 │   ├── aprobacion_presidencial.csv   # Base de datos maestra
 │   ├── encuestadoras.csv             # Catálogo de encuestadoras
 │   └── .wiki_state.json              # Estado de sincronización de Wikipedia (auto-generado)
+├── scripts/                          # Scripts de la carga histórica única (Piñera/Boric); ver «Cobertura histórica»
+│   ├── append_historical.py
+│   ├── patch_historical_urls.py
+│   ├── fill_dates_modalidad.py
+│   └── fill_n_informe.py
 ├── .github/
 │   └── workflows/
 │       ├── wiki_sync.yml             # Acción diaria de sincronización (Wikipedia)
@@ -52,6 +57,8 @@ Cada fila es una medición individual. Columnas:
 
 ## Encuestadoras cubiertas
 
+Cobertura automatizada del período de Kast (ver «Cobertura histórica» más abajo para Piñera y Boric):
+
 | Encuestadora | Producto | Frecuencia aprox. | Modalidad |
 |---|---|---|---|
 | Cadem | Plaza Pública | 2× semana | Online |
@@ -61,6 +68,20 @@ Cada fila es una medición individual. Columnas:
 | Activa Research | Pulso Ciudadano | Quincenal | Online |
 | TuInfluyes.com | DataInfluye | Mensual | Online |
 | AtlasIntel | Latam Pulse Chile | Mensual | Online |
+
+## Cobertura histórica (Piñera y Boric)
+
+Además del período de Kast, el CSV incluye 827 mediciones históricas: 399 del segundo gobierno de Sebastián Piñera (2018-2022) y 428 del gobierno de Gabriel Boric (2022-2026). El dashboard las muestra en pestañas separadas (Kast / Boric / Piñera). A diferencia del período de Kast, esta fue una carga histórica única — ambos gobiernos ya terminaron, por lo que no hay sincronización recurrente para ellos.
+
+**Origen de los datos:** los porcentajes fueron transcritos originalmente de [DecideChile](https://decidechile.cl), un agregador de encuestas chileno. A partir de ahí:
+- 813 de las 827 filas (98,3%) tienen una URL de fuente verificada y activa (todas re-chequeadas con `curl`, siguiendo redirecciones). La mayoría apunta al PDF original de la encuestadora (cadem.cl y plazapublica.cl → insight-chile.cl, igual que el período de Kast; criteria.cl, activaresearch.cl, cepchile.cl, etc.); donde el sitio original ya no aloja el archivo, se usó el snapshot correspondiente de Wayback Machine o un artículo periodístico que reproduce la misma cifra (La Tercera, Emol, BioBioChile, CNN Chile, El Mostrador, Ex-Ante, Cooperativa, La Nación, AIM Chile, etc.).
+- Dos valores se corrigieron en 1pp de desaprobación tras comparar contra la fuente primaria/periodística encontrada.
+- 14 filas (1,7%) quedaron sin fuente identificable pese a una búsqueda exhaustiva (Wayback Machine, sitio de la encuestadora, prensa); se mantienen en el dataset pero sin enlace en la tabla de fuentes ni `n_informe`.
+- 28 filas (2,9%) no tienen `n_muestra` ni `fecha_inicio_campo` disponibles (mayormente encuestas de 2018-2019 cuyo informe original no reporta esos campos); el dashboard usa un peso uniforme en el meta-análisis y la tendencia LOESS para esas filas en vez de excluirlas.
+
+**Encuestadoras adicionales cubiertas solo en el período histórico** (sin automatización propia, gobiernos ya cerrados): GfK Adimark, MORI, CERC-MORI, MORI-Fiel, Feedback Research, Research Chile.
+
+Los scripts usados para esta carga (`scripts/append_historical.py`, `scripts/patch_historical_urls.py`, `scripts/fill_dates_modalidad.py`, `scripts/fill_n_informe.py`) se conservan en el repositorio como registro histórico; no forman parte de la rutina automatizada y no deberían necesitar volver a ejecutarse.
 
 ## Sincronización automática
 
@@ -178,3 +199,4 @@ El número de versión se muestra junto al logo en el dashboard y corresponde a 
 | v1.8 | Corrección del intervalo de confianza al 95% y exportación a PNG. |
 | v1.9 | Corrección de bugs de pérdida de datos en `wiki_sync.py`; nuevo `blackwhite_sync.py` (sincronización por OCR desde blackwhite.global); auditoría completa del CSV (id duplicado, fila de CEP mal parseada, `n_informe` incompletos, orden cronológico); corrección de redondeo en el tooltip «Neto». |
 | v1.10 | Sección de Agradecimientos; nuevo `atlasintel_sync.py` (tercera fuente automatizada, mensual, por OCR) e inclusión de AtlasIntel en el dashboard; derivación automática de `n_informe`/`fecha_informe` y alerta ruidosa ante reportes no verificables en las tres sincronizaciones; corrección de regresión de fechas y backfill de 7 semanas en `blackwhite_sync.py`; recuperación de 39 enlaces caídos de Cadem vía `insight-chile.cl` (espejo permanente propio de Cadem) y reescritura automática de esas URLs en `wiki_sync.py` para que no vuelvan a caerse; auditoría de salud de enlaces en las 82 fuentes restantes (sin hallazgos). |
+| v1.11 | Cobertura histórica: 827 mediciones de Piñera (2018-2022) y Boric (2022-2026) incorporadas al dashboard con pestañas por presidente; recuperación y verificación de fuente para el 98,3% de esas filas (Wayback Machine, insight-chile.cl, prensa); manejo robusto de `n_muestra` ausente en el meta-análisis y la tendencia LOESS. |

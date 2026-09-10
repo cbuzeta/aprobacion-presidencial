@@ -18,9 +18,11 @@ jobs:
           python-version: '3.12'
 
       - name: Run wiki sync
+        id: sync
         run: python wiki_sync.py
 
       - name: Commit and push if changed
+        if: always()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -28,3 +30,9 @@ jobs:
           git diff --cached --quiet || git commit -m "Auto-sync: add new rows from Wikipedia ($(date +%Y-%m-%d))"
           git pull --rebase origin main
           git push
+
+      - name: Fail the run if any row needs manual entry
+        if: always() && steps.sync.outcome == 'failure'
+        run: |
+          echo "One or more new rows couldn't be fully labeled automatically — see the 'Run wiki sync' step log above for which, and why."
+          exit 1

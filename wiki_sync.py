@@ -19,6 +19,7 @@ import io
 import json
 import re
 import sys
+from datetime import date
 from pathlib import Path
 import urllib.request
 import urllib.parse
@@ -143,6 +144,133 @@ def _extract_url(line: str) -> str:
     return m.group(1).strip() if m else ""
 
 
+_REF_DEF_RE = re.compile(r'<ref name="([^"]+)">(\{\{Cita web\|.*?\}\})</ref>')
+_REF_USE_RE = re.compile(r'<ref name="([^"]+)"\s*/>')
+_REF_INLINE_RE = re.compile(r"<ref[^>]*>(\{\{Cita web\|.*?\}\})</ref>", re.DOTALL)
+
+
+def _build_ref_index(wikitext: str) -> dict[str, str]:
+    """Map named-reference id -> its {{Cita web|…}} text, so a row whose cell
+    only has <ref name="X" /> (Wikipedia reusing an earlier citation) can
+    still be traced back to the original citation's fields."""
+    return {m.group(1): m.group(2) for m in _REF_DEF_RE.finditer(wikitext)}
+
+
+def _get_citation(raw0: str, ref_index: dict) -> str:
+    """Return this cell's {{Cita web|…}} text, resolving a self-closing
+    named reference against ref_index if the cell doesn't define one inline."""
+    m = _REF_USE_RE.search(raw0)
+    if m:
+        return ref_index.get(m.group(1), "")
+    m = _REF_INLINE_RE.search(raw0)
+    return m.group(1) if m else ""
+
+
+def _citation_field(cita: str, field: str) -> str:
+    m = re.search(rf"\|{field}=([^|}}]+)", cita)
+    return m.group(1).strip() if m else ""
+
+
+_MONTH_NUM_TO_NAME = {v: k for k, v in MONTH_ES.items()}  # "08" -> "Ago"
+_MONTH_FULL = {
+    "Ene": "Enero", "Feb": "Febrero", "Mar": "Marzo", "Abr": "Abril",
+    "May": "Mayo", "Jun": "Junio", "Jul": "Julio", "Ago": "Agosto",
+    "Sep": "Septiembre", "Oct": "Octubre", "Nov": "Noviembre", "Dic": "Diciembre",
+}
+
+
+def _parse_citation_fecha(s: str) -> tuple[str, str, str]:
+    """'31 de agosto de 2026' or ISO '2026-08-31' -> ('31', 'Agosto', '2026');
+    ('', '', '') if unparseable."""
+    s = s.strip()
+    m = re.match(r"(\d+)\s+de\s+(\w+)\s+de\s+(\d{4})", s)
+    if m:
+        d, mo, yr = m.groups()
+        return d, mo.capitalize(), yr
+    m = re.match(r"(\d{4})-(\d{2})-(\d{2})", s)
+    if m:
+        yr, mo_num, d = m.groups()
+        mes = _MONTH_FULL.get(_MONTH_NUM_TO_NAME.get(mo_num, ""), "")
+        if mes:
+            return d, mes, yr
+    return "", "", ""
+
+
+def _sanity_check_fecha_informe(fecha_informe: str, fecha_fin: str, name: str) -> str:
+    """A citation's own fecha= field occasionally has a typo in the Wikipedia
+    source itself (a wrong year has happened). Guard against writing that
+    straight into the CSV: a report can't be published before its own
+    fieldwork ends, and is never dozens of days after either — fall back to
+    fecha_fin_campo (the old proxy) rather than silently corrupting the
+    timeline this feeds the chart."""
+    try:
+        d1, m1, y1 = fecha_informe.split("-")
+        d2, m2, y2 = fecha_fin.split("-")
+        informe_dt = date(int(y1), int(m1), int(d1))
+        fin_dt = date(int(y2), int(m2), int(d2))
+    except (ValueError, TypeError):
+        return fecha_fin
+    delta = (informe_dt - fin_dt).days
+    if delta < 0 or delta > 30:
+        print(f"  ⚠  Citation date '{fecha_informe}' for '{name}' looks wrong "
+              f"(fieldwork ends {fecha_fin}) — using {fecha_fin} instead; "
+              f"check the Wikipedia citation for a typo")
+        return fecha_fin
+    return fecha_informe
+
+
+def _derive_n_informe(encuestadora: str, url: str, cita: str, fecha_fin: str = "") -> str:
+    """Best-effort report label, mirroring the conventions already used in
+    the CSV for each pollster's own reports. Falls back to citing the
+    secondary source (news outlet, newsletter, etc.) when the row isn't
+    backed by the pollster's own report — e.g. a poll only mentioned in a
+    journalist's article, with no standalone PDF to cite."""
+    if encuestadora == "Cadem":
+        m = re.search(r"Track-PP-(\d+)", url, re.IGNORECASE)
+        if m:
+            return m.group(1)
+    elif encuestadora == "Criteria":
+        m = re.search(r"Agenda_Criteria_(\d+)_([A-Za-z]+)_(\d{4})", url)
+        if m:
+            d, mo, yr = m.groups()
+            return f"{int(d)} de {mo.capitalize()} {yr}"
+    elif encuestadora == "Activa Research":
+        num = re.search(r"Publicaci[oó]n\s*#(\d+)", cita)
+        # Use the row's own fieldwork-end month, not the citation's — Activa's
+        # own título labels are sometimes mislabeled by a month (seen in the
+        # wild: a "#121" report titled "Abril 26" whose actual dates were in
+        # May), and the citation's publication date can spill into the
+        # following month too.
+        if num and fecha_fin:
+            _, mo_num, yr = fecha_fin.split("-")
+            mes = _MONTH_FULL.get(_MONTH_NUM_TO_NAME.get(mo_num, ""), "")
+            if mes:
+                return f"{num.group(1)} - {mes} {yr}"
+    elif encuestadora == "TuInfluyes.com":
+        m = re.search(r"/e/([a-z]+)-(\d{4})", url)
+        if m:
+            mes, yr = m.groups()
+            return f"{mes[:3]}-{yr[2:]}"
+    elif encuestadora == "CEP":
+        m = re.search(r"N[°º]\s*(\d+)", cita)
+        if m:
+            return f"Encuesta CEP {m.group(1)}"
+    elif encuestadora == "Panel Ciudadano-UDD" and "panelciudadano.cl" in url:
+        d, mes, yr = _parse_citation_fecha(_citation_field(cita, "fecha"))
+        if d:
+            return f"{int(d)} de {mes} {yr}"
+
+    # Generic fallback: the row isn't backed by the pollster's own report
+    # (e.g. cited only via a news article) — note the secondary source
+    # instead of leaving a blank a human would have to track down by hand.
+    sitioweb = _citation_field(cita, "sitioweb")
+    d, mes, yr = _parse_citation_fecha(_citation_field(cita, "fecha"))
+    if sitioweb and d:
+        mm = MONTH_ES.get(mes[:3], "??")
+        return f"Citado en {sitioweb} ({d.zfill(2)}-{mm}-{yr})"
+    return ""
+
+
 def _parse_date(s: str) -> tuple[str, str]:
     """Return (fecha_inicio, fecha_fin) in DD-MM-YYYY from a Wikipedia date string."""
     s = s.strip().replace("–", "-").replace("—", "-")
@@ -173,7 +301,7 @@ def _parse_date(s: str) -> tuple[str, str]:
     return "", ""
 
 
-def _parse_row(cells: list[str]) -> dict | None:
+def _parse_row(cells: list[str], ref_index: dict | None = None) -> dict | None:
     """Convert 8 raw cell lines into a CSV row dict, or None if unparseable."""
     if len(cells) != 8:
         return None
@@ -181,7 +309,10 @@ def _parse_row(cells: list[str]) -> dict | None:
     # Column 0: pollster name + source URL
     raw0 = cells[0]
     name = _cell_value(raw0)   # strips bgcolor/style prefix, refs, markup, wikilinks
-    url  = _extract_url(raw0)
+    cita = _get_citation(raw0, ref_index or {})
+    # A row reusing an earlier citation (<ref name="X" />) has no inline
+    # "url=" of its own — the url only lives in the citation it points to.
+    url = _extract_url(raw0) or _extract_url(cita)
 
     info = POLLSTERS.get(name)
     if info is None:
@@ -206,8 +337,14 @@ def _parse_row(cells: list[str]) -> dict | None:
         v = _cell_value(line).replace("%", "").replace(",", ".").strip()
         return "" if v in ("—", "-", "") else v
 
+    # The citation's own "fecha=" field is the report's real publication date;
+    # fall back to fecha_fin_campo only when there's no citation to read it from.
+    d, mes, yr = _parse_citation_fecha(_citation_field(cita, "fecha"))
+    fecha_informe = f"{d.zfill(2)}-{MONTH_ES.get(mes[:3], '??')}-{yr}" if d else fecha_fin
+    fecha_informe = _sanity_check_fecha_informe(fecha_informe, fecha_fin, name)
+
     return {
-        "fecha_informe":      fecha_fin,   # proxy; verify exact publication date manually
+        "fecha_informe":      fecha_informe,
         "fecha_inicio_campo": fecha_ini,
         "fecha_fin_campo":    fecha_fin,
         "presidente":         "José Antonio Kast",
@@ -222,7 +359,7 @@ def _parse_row(cells: list[str]) -> dict | None:
         "nr_gob_pct":         "",
         "neto_gob":           "",
         "modalidad":          info["modalidad"],
-        "n_informe":          "",   # not available on Wikipedia
+        "n_informe":          _derive_n_informe(info["encuestadora"], url, cita, fecha_fin),
         "excluir":            info.get("excluir", 0),
         "url_fuente":         url,
     }
@@ -230,6 +367,7 @@ def _parse_row(cells: list[str]) -> dict | None:
 
 def parse_table(wikitext: str) -> list[dict]:
     """Extract all data rows from the wikitext table."""
+    ref_index = _build_ref_index(wikitext)
     rows: list[dict] = []
     cells: list[str] = []
     in_row = False
@@ -237,13 +375,13 @@ def parse_table(wikitext: str) -> list[dict]:
     for line in wikitext.splitlines():
         if line.startswith("|-"):
             if in_row and cells:
-                row = _parse_row(cells)
+                row = _parse_row(cells, ref_index)
                 if row:
                     rows.append(row)
             cells, in_row = [], True
         elif line.startswith("|}"):
             if in_row and cells:
-                row = _parse_row(cells)
+                row = _parse_row(cells, ref_index)
                 if row:
                     rows.append(row)
             in_row = False
@@ -330,6 +468,7 @@ def main() -> None:
     prefix  = "[dry-run] " if args.dry_run else ""
 
     print(f"\n{prefix}New rows ({len(new_rows)}):")
+    missing_informe = []
     for i, row in enumerate(new_rows):
         flag = "  ← excluir=1" if row["excluir"] else ""
         print(
@@ -337,11 +476,8 @@ def main() -> None:
             f"{row['fecha_fin_campo']}  n={row['n_muestra']:<6} "
             f"{row['aprueba_pct']}% / {row['desaprueba_pct']}%{flag}"
         )
-
-    print(
-        f"\n  ⚠  Manual follow-up needed for each new row: "
-        f"n_informe (report number) and verify fecha_informe (publication date)."
-    )
+        if not row["n_informe"]:
+            missing_informe.append(f"{row['encuestadora']} {row['fecha_fin_campo']}")
 
     if args.dry_run:
         print("\n[dry-run] Nothing written.")
@@ -349,6 +485,17 @@ def main() -> None:
 
     append_rows(new_rows, next_id)
     save_state(revid, timestamp)
+
+    if missing_informe:
+        # Every recognized pollster/citation shape gets an n_informe derived
+        # automatically (see _derive_n_informe); a blank one here means a URL
+        # or citation pattern we haven't seen before. Exit non-zero so the
+        # daily workflow surfaces it instead of silently leaving a gap.
+        print(
+            f"\n⚠  Could not derive n_informe for {len(missing_informe)} row(s), "
+            f"needs manual entry: {', '.join(missing_informe)}"
+        )
+        sys.exit(1)
     print(f"\n✓ Appended {len(new_rows)} row(s) to {CSV_PATH.name}.")
 
 

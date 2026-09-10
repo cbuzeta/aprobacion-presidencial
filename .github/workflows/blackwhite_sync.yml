@@ -21,9 +21,11 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y poppler-utils tesseract-ocr
 
       - name: Run Black & White sync
+        id: sync
         run: python blackwhite_sync.py
 
       - name: Commit and push if changed
+        if: always()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -31,3 +33,9 @@ jobs:
           git diff --cached --quiet || git commit -m "Auto-sync: add new Black & White report(s) ($(date +%Y-%m-%d))"
           git pull --rebase origin main
           git push
+
+      - name: Fail the run if any report needs manual entry
+        if: always() && steps.sync.outcome == 'failure'
+        run: |
+          echo "One or more Black & White reports could not be auto-verified — see the 'Run Black & White sync' step log above for which, and why."
+          exit 1

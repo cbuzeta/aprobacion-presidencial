@@ -131,31 +131,55 @@ def render_page_png(pdf_path: Path, page_num: int, out_prefix: Path) -> Path:
 
 
 def ocr_total_column(png_path: Path) -> list[int] | None:
-    """OCR the chart with sparse-text mode and return the leftmost ('Total')
-    column's numbers, top-to-bottom: [no_aprueba, desaprueba, aprueba]."""
-    out = subprocess.run(
-        ["tesseract", str(png_path), "stdout", "--psm", "11", "tsv"],
-        capture_output=True, check=True,
-    ).stdout.decode("utf-8", errors="replace")
+    """OCR the chart and return the 'Total' bar's 3 stacked numbers,
+    top-to-bottom: [no_aprueba, desaprueba, aprueba].
 
-    nums = []
-    for line in out.splitlines()[1:]:
-        cols = line.split("\t")
-        if len(cols) < 12:
-            continue
-        text = cols[11].strip()
-        if re.fullmatch(r"\d{1,3}", text):
+    Tries a few Tesseract page-segmentation modes in turn: a low-contrast
+    digit in a shaded bar segment is sometimes missed by one mode and caught
+    by another. A wrong digit here is still caught downstream by the
+    checksum and aprueba-text cross-check before anything is written, so
+    trying more modes only helps and never weakens that guarantee.
+    """
+    for psm in ("11", "6", "12"):
+        out = subprocess.run(
+            ["tesseract", str(png_path), "stdout", "--psm", psm, "tsv"],
+            capture_output=True, check=True,
+        ).stdout.decode("utf-8", errors="replace")
+
+        nums, total_x = [], []
+        for line in out.splitlines()[1:]:
+            cols = line.split("\t")
+            if len(cols) < 12:
+                continue
+            text = cols[11].strip()
             left, top, width, height = (int(cols[6]), int(cols[7]), int(cols[8]), int(cols[9]))
-            nums.append((left + width / 2, top + height / 2, int(text)))
+            if re.fullmatch(r"\d{1,3}", text):
+                nums.append((left + width / 2, top + height / 2, int(text)))
+            elif text == "Total":
+                total_x.append(left + width / 2)
 
-    if not nums:
-        return None
-    nums.sort(key=lambda n: n[0])
-    x0 = nums[0][0]
-    cluster = sorted([n for n in nums if n[0] - x0 < 100], key=lambda n: n[1])
-    if len(cluster) != 3:
-        return None
-    return [n[2] for n in cluster]
+        if not nums:
+            continue
+
+        # Reports with a demographic breakdown render 10 stacked bars plus a
+        # left-hand axis of "0/10/.../100" gridline labels, which can confuse
+        # a pure leftmost-cluster heuristic into grabbing the axis instead of
+        # the Total bar. Anchor on the OCR'd "Total" x-axis label when we have
+        # one; fall back to leftmost-cluster otherwise (older single-bar
+        # charts have no axis-label collision to worry about).
+        if total_x:
+            x0 = min(total_x)
+            cluster = sorted([n for n in nums if abs(n[0] - x0) < 60], key=lambda n: n[1])
+            if len(cluster) == 3:
+                return [n[2] for n in cluster]
+
+        nums.sort(key=lambda n: n[0])
+        x0 = nums[0][0]
+        cluster = sorted([n for n in nums if n[0] - x0 < 100], key=lambda n: n[1])
+        if len(cluster) == 3:
+            return [n[2] for n in cluster]
+
+    return None
 
 
 def find_approval_page(pages: list[str]) -> int | None:
@@ -167,13 +191,31 @@ def find_approval_page(pages: list[str]) -> int | None:
     return None
 
 
-def parse_report(pages: list[str]) -> dict | None:
-    full_text = "\n".join(pages)
+def parse_report(pages: list[str]) -> tuple[dict | None, bool]:
+    """Returns (parsed_fields_or_None, is_approval_report).
 
+    is_approval_report is False when the PDF has no "Aprobación del
+    gobierno" slide at all — B&W publishes plenty of reports that aren't
+    presidential-approval polls (consumer-habits pieces, etc.), and that's
+    expected, not a parsing failure. It's True whenever the slide exists but
+    some other required field couldn't be extracted, which does need
+    attention: the report is a poll, we just failed to read it.
+    """
+    page_num = find_approval_page(pages)
+    if page_num is None:
+        return None, False
+    approval_page = pages[page_num - 1]
+
+    aprueba_match = re.search(r"Un\s+(\d{1,3})%\s+aprueba", approval_page)
+    if not aprueba_match:
+        return None, True
+    aprueba_text = int(aprueba_match.group(1))
+
+    full_text = "\n".join(pages)
     n_match = re.search(r"realizaron\s+([\d.,]+)\s+encuestas", full_text)
     campo_idx = full_text.find("Trabajo de campo")
     if not n_match or campo_idx == -1:
-        return None
+        return None, True
     n_muestra = n_match.group(1).replace(".", "").replace(",", "")
 
     # The "Trabajo de campo" column header sits next to "Error muestral" in the
@@ -188,17 +230,7 @@ def parse_report(pages: list[str]) -> dict | None:
         if fecha_inicio:
             break
     if not fecha_inicio or not fecha_fin:
-        return None
-
-    page_num = find_approval_page(pages)
-    if page_num is None:
-        return None
-    approval_page = pages[page_num - 1]
-
-    aprueba_match = re.search(r"Un\s+(\d{1,3})%\s+aprueba", approval_page)
-    if not aprueba_match:
-        return None
-    aprueba_text = int(aprueba_match.group(1))
+        return None, True
 
     date_match = re.search(r"(\d{1,2}\s+\w+\s+202\d)\s*$", approval_page.strip())
     fecha_informe = parse_informe_date(date_match.group(1)) if date_match else fecha_fin
@@ -210,7 +242,7 @@ def parse_report(pages: list[str]) -> dict | None:
         "fecha_informe": fecha_informe or fecha_fin,
         "aprueba_text": aprueba_text,
         "approval_page_num": page_num,
-    }
+    }, True
 
 
 def parse_field_dates(s: str) -> tuple[str, str]:
@@ -292,7 +324,14 @@ def _key(fecha_inicio_campo: str, aprueba_pct: int) -> tuple:
     return ("Black & White", fecha_inicio_campo, aprueba_pct)
 
 
-def process_report(title: str, url: str, existing_keys: set) -> dict | None:
+def process_report(title: str, url: str, existing_keys: set) -> tuple[dict | None, bool]:
+    """Returns (row_or_None, needs_attention).
+
+    needs_attention is True whenever a report we believe IS a presidential-
+    approval poll couldn't be fully verified — a real gap a human should
+    know about. It's False for cases that need no follow-up: the report
+    isn't a poll at all, or it's already in the CSV under a different URL.
+    """
     with tempfile.TemporaryDirectory() as tmp:
         tmp = Path(tmp)
         pdf_path = tmp / "report.pdf"
@@ -300,39 +339,47 @@ def process_report(title: str, url: str, existing_keys: set) -> dict | None:
             download(url, pdf_path)
         except Exception as e:
             print(f"  ⚠  Could not download {url}: {e}")
-            return None
+            return None, True
 
         pages = pdf_pages_text(pdf_path)
-        parsed = parse_report(pages)
+        parsed, is_approval_report = parse_report(pages)
+        if not is_approval_report:
+            print(f"  No presidential approval question in '{title}' — not a poll, skipping")
+            return None, False
         if parsed is None:
             print(f"  ⚠  Could not parse methodology/approval slide for '{title}' — skipping")
-            return None
+            return None, True
 
         key = _key(parsed["fecha_inicio_campo"], parsed["aprueba_text"])
         if key in existing_keys:
             print(f"  Already in the CSV under a different URL (same fecha/aprueba%) — skipping")
-            return None
+            return None, False
 
         try:
             png_path = render_page_png(pdf_path, parsed["approval_page_num"], tmp / "approval")
             triplet = ocr_total_column(png_path)
         except Exception as e:
             print(f"  ⚠  OCR failed for '{title}': {e} — skipping")
-            return None
+            return None, True
 
         if triplet is None:
             print(f"  ⚠  Could not read 3 numbers off the approval chart for '{title}' — skipping")
-            return None
+            return None, True
 
         no_aprueba, desaprueba, aprueba_chart = triplet
         if aprueba_chart != parsed["aprueba_text"]:
             print(f"  ⚠  OCR mismatch for '{title}': chart says {aprueba_chart}% aprueba, "
                   f"text says {parsed['aprueba_text']}% — skipping (needs manual entry)")
-            return None
-        if aprueba_chart + desaprueba + no_aprueba != 100:
+            return None, True
+        total = aprueba_chart + desaprueba + no_aprueba
+        if abs(total - 100) > 1:
             print(f"  ⚠  OCR checksum failed for '{title}': "
-                  f"{aprueba_chart}+{desaprueba}+{no_aprueba} != 100 — skipping (needs manual entry)")
-            return None
+                  f"{aprueba_chart}+{desaprueba}+{no_aprueba} = {total} — skipping (needs manual entry)")
+            return None, True
+        if total != 100:
+            # The source chart itself is off by a point of rounding (a known,
+            # recurring pattern in B&W's own charts) — not an OCR error.
+            print(f"  Note: '{title}' sums to {total}% in the source chart (rounding) — accepted as-is")
 
         return {
             "fecha_informe":      parsed["fecha_informe"],
@@ -349,7 +396,7 @@ def process_report(title: str, url: str, existing_keys: set) -> dict | None:
             "n_informe":          title,
             "excluir":            0,
             "url_fuente":         url,
-        }
+        }, False
 
 
 def main() -> None:
@@ -385,13 +432,16 @@ def main() -> None:
     print(f"\n{prefix}Checking {len(new_cards)} new report(s):")
 
     rows = []
+    attention_needed = []
     for i, (title, url) in enumerate(new_cards):
         if i > 0:
             print("\n… waiting 3 min before the next report, to stay under "
                   "blackwhite.global's download rate limit")
             time.sleep(180)
         print(f"\n- {title}")
-        row = process_report(title, url, existing_keys)
+        row, needs_attention = process_report(title, url, existing_keys)
+        if needs_attention:
+            attention_needed.append(title)
         if row is None:
             continue
         print(f"  [{next_id + len(rows):>3}] {row['fecha_fin_campo']}  n={row['n_muestra']:<6} "
@@ -401,14 +451,20 @@ def main() -> None:
 
     if not rows:
         print("\nNo rows could be verified automatically this run.")
-        return
-
-    if args.dry_run:
+    elif args.dry_run:
         print(f"\n[dry-run] Would append {len(rows)} row(s). Nothing written.")
-        return
+    else:
+        append_rows(rows, next_id)
+        print(f"\n✓ Appended {len(rows)} row(s) to {CSV_PATH.name}.")
 
-    append_rows(rows, next_id)
-    print(f"\n✓ Appended {len(rows)} row(s) to {CSV_PATH.name}.")
+    if attention_needed:
+        # Exit non-zero so the daily workflow run shows as failed instead of a
+        # silent green checkmark — that's what let 7 weeks of unparseable
+        # reports go unnoticed before. Whatever DID get verified above is
+        # still written/committed; this only flags what wasn't.
+        print(f"\n⚠  {len(attention_needed)} report(s) need manual entry: "
+              f"{', '.join(attention_needed)}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
